@@ -3,13 +3,22 @@ from torch import nn
 from torch.nn import functional as F
 
 class BaseNeuralNetwork(nn.Module):
-    def __init__(self, num_channels, num_features, num_out_features, train_dataloader, val_dataloader, test_dataloader):
+    def __init__(self, device, num_channels, num_features, num_out_features, train_dataloader, val_dataloader, test_dataloader):
         super(BaseException, self).__init__()
+
+        self.device = device
 
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
         self.test_dataloader = test_dataloader
         self.num_channels = num_channels
+
+        self.history = {
+            "train_loss": [],
+            "train_acc": [],
+            "val_loss": [],
+            "val_acc": []
+        }
         
         self.conv_layer1 = nn.Sequential(
             nn.Conv2d(in_channels=num_channels, out_channels=32, kernel_size=3, stride=1),
@@ -81,8 +90,38 @@ class BaseNeuralNetwork(nn.Module):
         
             pred = self(inputs)
             loss = loss_function(pred, labels)
-        """TODO"""
-        raise NotImplementedError
+            
+            loss.backward()
+            optimizer.step()
+
+            total_train_loss += loss
+            total_train_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
+
+        with torch.no_grad():
+            self.eval()
+
+            for (inputs, labels) in self.val_dataloader:
+                (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
+
+                pred = self(inputs)
+                loss = loss_function(pred, labels)
+
+                total_val_loss += loss
+                total_val_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
+
+        avg_train_loss = total_train_loss / train_steps
+        avg_val_loss = total_val_loss / val_steps
+
+        train_correct = total_train_correct / len(self.train_dataloader.dataset)
+        val_correct = total_val_correct / len(self.val_dataloader.dataset)
+
+        self.history["train_loss"].append(avg_train_loss.cpu().detach().numpy())
+        self.history["train_acc"].append(train_correct)
+        self.history["val_loss"].append(avg_val_loss.cpu().detach().numpy())
+        self.history["val_acc"].append(val_correct)
+
+        # Do I need to return the history
+        return self.history
     
     def test(self):
         """TODO"""
