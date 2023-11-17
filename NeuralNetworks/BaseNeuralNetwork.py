@@ -9,6 +9,7 @@ class BaseNeuralNetwork(nn.Module):
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
         self.test_dataloader = test_dataloader
+        self.num_channels = num_channels
         
         self.conv_layer1 = nn.Sequential(
             nn.Conv2d(in_channels=num_channels, out_channels=32, kernel_size=3, stride=1),

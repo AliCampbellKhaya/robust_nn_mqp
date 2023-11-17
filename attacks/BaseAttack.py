@@ -15,8 +15,8 @@ class BaseAttack():
         """TODO"""
         raise NotImplementedError
     
-    def denorm(self, inputs, mean=[0.1307], std=[0.3081]):
-        """TODO"""
+    def denormalize(self, inputs, mean=[0.1307], std=[0.3081]):
+        """TODO - method is in the notebook"""
         raise NotImplementedError
     
     def _set_mode_targeted(self, mode, quiet):
