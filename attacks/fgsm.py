@@ -8,7 +8,6 @@ class FGSM(BaseAttack):
 
     def forward(self, image, label):
         image_grad = image.grad.data
-        image_denorm = self.denorm(image)
 
         sign_data_grad = image_grad.sign()
 
@@ -17,13 +16,4 @@ class FGSM(BaseAttack):
 
         return perturbed_image
 
-
-    # Restores tensors to original levels
-    def denorm(self, batch, mean=[0.1307], std=[0.3081]):
-        if isinstance(mean, list):
-            mean = torch.tensor(mean).to(self.device)
-        if isinstance(std, list):
-            std = torch.tensor(std).to(self.device)
-
-        return batch * std.view(1, -1, 1, 1) + mean.view(1, -1, 1, 1)
     
