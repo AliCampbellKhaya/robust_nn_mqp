@@ -65,22 +65,37 @@ class BaseNeuralNetwork(nn.Module):
 
         return F.log_softmax(x, dim=1)
     
-    def train():
+    def train(self, loss_function, optimizer):
+        self.train()
+
+        total_train_loss = 0
+        total_val_loss = 0
+
+        total_train_correct = 0
+        total_val_correct = 0
+    
+        for (inputs, labels) in self.train_dataloader:
+            (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
+    
+            optimizer.zero_grad()
+        
+            pred = self(inputs)
+            loss = loss_function(pred, labels)
         """TODO"""
         raise NotImplementedError
     
-    def test():
+    def test(self):
         """TODO"""
         raise NotImplementedError
     
-    def test_attack():
+    def test_attack(self):
         """TODO"""
         raise NotImplementedError
     
-    def save():
+    def save(self):
         """TODO"""
         raise NotImplementedError
     
-    def load():
+    def load(self):
         """TODO"""
         raise NotImplementedError

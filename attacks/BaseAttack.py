@@ -90,6 +90,21 @@ class BaseAttack():
         if given_training:
             self.model.train()
         return outputs
+
+    def get_target_label(self, inputs, labels=None):
+        """
+        Function for changing the attack mode.
+        Return input labels.
+        """
+        if self._target_map_function is None:
+            raise ValueError(
+                "target_map_function is not initialized by set_mode_targeted."
+            )
+        if self.attack_mode == "targeted(label)":
+            target_labels = labels
+        else:
+            target_labels = self._target_map_function(inputs, labels)
+        return target_labels
     
     @torch.no_grad()
     def get_least_likely_label(self, inputs, labels=None):
