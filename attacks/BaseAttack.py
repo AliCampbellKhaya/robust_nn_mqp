@@ -12,12 +12,14 @@ class BaseAttack():
         raise NotImplementedError
 
     def normalize(self, inputs, mean=[0.1307], std=[0.3081]):
-        """TODO"""
-        raise NotImplementedError
+        mean = torch.tensor(mean).to(self.device).reshape(1, self.model.num_channels, 1, 1)
+        std = torch.tensor(std).to(self.device).reshape(1, self.model.num_channels, 1, 1)
+        return (inputs - mean) / std
     
-    def denormalize(self, inputs, mean=[0.1307], std=[0.3081]):
-        """TODO - method is in the notebook"""
-        raise NotImplementedError
+    def denormalize(self, inputs, mean=0.1307, std=0.3081):
+        mean = torch.tensor(mean).to(self.device).reshape(1, self.model.num_channels, 1, 1)
+        std = torch.tensor(std).to(self.device).reshape(1, self.model.num_channels, 1, 1)
+        return (inputs * std) + mean
     
     def _set_mode_targeted(self, mode, quiet):
         if "targeted" not in self.supported_mode:
@@ -28,7 +30,7 @@ class BaseAttack():
             print("Attack mode is changed to '%s'." % mode)
 
     def set_mode_targeted_by_function(self, target_map_function, quiet=False):
-        r"""
+        """
         Set attack mode as targeted.
 
         Arguments:
@@ -42,7 +44,7 @@ class BaseAttack():
         self._target_map_function = target_map_function
 
     def set_mode_targeted_random(self, quiet=False):
-        r"""
+        """
         Set attack mode as targeted with random labels.
 
         Arguments:
@@ -53,7 +55,7 @@ class BaseAttack():
         self._target_map_function = self.get_random_target_label
 
     def set_mode_targeted_least_likely(self, kth_min=1, quiet=False):
-        r"""
+        """
         Set attack mode as targeted with least likely labels.
 
         Arguments:
@@ -67,7 +69,7 @@ class BaseAttack():
         self._target_map_function = self.get_least_likely_label
 
     def set_mode_targeted_by_label(self, quiet=False):
-        r"""
+        """
         Set attack mode as targeted.
 
         Arguments:
