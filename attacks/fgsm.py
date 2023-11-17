@@ -2,8 +2,8 @@ import torch
 import BaseAttack
 
 class FGSM(BaseAttack):
-    def __init__(self, model, device, eps):
-        super().__init__("FGSM", model, device)
+    def __init__(self, model, device, targeted, eps):
+        super().__init__("FGSM", model, device, targeted)
         self.eps = eps
 
     def forward(self, image, label):
