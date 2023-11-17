@@ -124,7 +124,7 @@ class BaseAttack():
     def __call__(self, inputs, labels=None):
 
         inputs = self.denorm(inputs)
-        adv_inputs = self.forward(inputs, labels)
-        adv_inputs = self.normalize(inputs)
+        perturbed_inputs = self.forward(inputs, labels)
+        perturbed_inputs = self.normalize(perturbed_inputs)
 
-        return adv_inputs
+        return perturbed_inputs

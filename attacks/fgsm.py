@@ -6,12 +6,11 @@ class FGSM(BaseAttack):
         super().__init__("FGSM", model, device, targeted)
         self.eps = eps
 
-    def forward(self, image, label):
-        image_grad = image.grad.data
+    def forward(self, inputs, label):
+        input_grad = input.grad.data
+        sign_data_grad = input_grad.sign()
 
-        sign_data_grad = image_grad.sign()
-
-        perturbed_image = image + self.eps * sign_data_grad
+        perturbed_image = inputs + self.eps * sign_data_grad
         perturbed_image = torch.clamp(perturbed_image, 0, 1)
 
         return perturbed_image
