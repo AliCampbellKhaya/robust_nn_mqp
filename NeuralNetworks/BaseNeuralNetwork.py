@@ -1,12 +1,15 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
+import numpy as np
+from sklearn.metrics import classification_report
 
 class BaseNeuralNetwork(nn.Module):
-    def __init__(self, device, num_channels, num_features, num_out_features, train_dataloader, val_dataloader, test_dataloader):
+    def __init__(self, device, num_channels, num_features, num_out_features, batch_size, train_dataloader, val_dataloader, test_dataloader):
         super(BaseException, self).__init__()
 
         self.device = device
+        self.batch_size = batch_size
 
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
@@ -123,9 +126,27 @@ class BaseNeuralNetwork(nn.Module):
         # Do I need to return the history
         return self.history
     
-    def test(self):
-        """TODO"""
-        raise NotImplementedError
+    def test(self, loss_function, test_data):
+        self.eval()
+
+        total_test_loss = 0
+        total_test_correct = 0
+        preds = []
+
+        for (inputs, labels) in self.test_dataloader:
+            (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
+
+            pred = self(inputs)
+            loss = loss_function(pred, labels)
+
+            total_test_loss += loss
+            total_test_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
+
+            preds.extend(pred.argmax(axis=1).cpu().numpy())
+
+        cr = classification_report(test_data.targets, np.array(preds), target_names=test_data.classes)
+
+        return cr
     
     def test_attack(self):
         """TODO"""
