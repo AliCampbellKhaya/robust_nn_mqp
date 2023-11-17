@@ -75,3 +75,11 @@ class BaseNeuralNetwork(nn.Module):
     def test_attack():
         """TODO"""
         raise NotImplementedError
+    
+    def save():
+        """TODO"""
+        raise NotImplementedError
+    
+    def load():
+        """TODO"""
+        raise NotImplementedError
