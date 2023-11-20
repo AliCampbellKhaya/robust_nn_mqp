@@ -112,8 +112,9 @@ class BaseNeuralNetwork(nn.Module):
                 total_val_loss += loss
                 total_val_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
 
-        avg_train_loss = total_train_loss / train_steps
-        avg_val_loss = total_val_loss / val_steps
+        # Train and Val Steps
+        avg_train_loss = total_train_loss / ( len(self.val_dataloader.dataset) / self.batch_size)
+        avg_val_loss = total_val_loss / ( len(self.val_dataloader.dataset) / self.batch_size)
 
         train_correct = total_train_correct / len(self.train_dataloader.dataset)
         val_correct = total_val_correct / len(self.val_dataloader.dataset)
@@ -123,7 +124,7 @@ class BaseNeuralNetwork(nn.Module):
         self.history["val_loss"].append(avg_val_loss.cpu().detach().numpy())
         self.history["val_acc"].append(val_correct)
 
-        # Do I need to return the history
+        # Do I need to return the history??
         return self.history
     
     def test(self, loss_function, test_data):
@@ -146,7 +147,8 @@ class BaseNeuralNetwork(nn.Module):
 
         cr = classification_report(test_data.targets, np.array(preds), target_names=test_data.classes)
 
-        return cr
+        # Preds are the array of probability percentage
+        return cr, preds
     
     def test_attack(self):
         """TODO"""
