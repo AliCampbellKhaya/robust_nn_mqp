@@ -21,4 +21,4 @@ class MNISTNeuralNetwork(BaseNeuralNetwork):
         test_dataloader = DataLoader(test_data, batch_size=batch_size)
 
         # Is for MNIST so num channels and features are hard coded
-        super().__init__(self, device, 1, 2048, 10, batch_size, train_dataloader, val_dataloader, test_dataloader) 
+        super().__init__(self, device, 1, 2048, 10, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data) 

@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.metrics import classification_report
 
 class BaseNeuralNetwork(nn.Module):
-    def __init__(self, device, num_channels, num_features, num_out_features, batch_size, train_dataloader, val_dataloader, test_dataloader):
+    def __init__(self, device, num_channels, num_features, num_out_features, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data):
         super(BaseException, self).__init__()
 
         self.device = device
@@ -14,6 +14,7 @@ class BaseNeuralNetwork(nn.Module):
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
         self.test_dataloader = test_dataloader
+        self.test_data = test_data
         self.num_channels = num_channels
 
         self.history = {
@@ -127,7 +128,7 @@ class BaseNeuralNetwork(nn.Module):
         # Do I need to return the history??
         return self.history
     
-    def test(self, loss_function, test_data):
+    def test(self, loss_function):
         self.eval()
 
         total_test_loss = 0
@@ -145,7 +146,7 @@ class BaseNeuralNetwork(nn.Module):
 
             preds.extend(pred.argmax(axis=1).cpu().numpy())
 
-        cr = classification_report(test_data.targets, np.array(preds), target_names=test_data.classes)
+        cr = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
 
         # Preds are the array of probability percentage
         return cr, preds
