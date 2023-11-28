@@ -10,8 +10,8 @@ class FGSM(BaseAttack):
         input_grad = input.grad.data
         sign_data_grad = input_grad.sign()
 
-        perturbed_image = inputs + self.eps * sign_data_grad
-        perturbed_image = torch.clamp(perturbed_image, 0, 1)
+        perturbed_input = inputs + self.eps * sign_data_grad
+        perturbed_input = torch.clamp(perturbed_input, 0, 1)
 
-        return perturbed_image
+        return perturbed_input
     

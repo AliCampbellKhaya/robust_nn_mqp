@@ -21,6 +21,8 @@ class BaseAttack():
         std = torch.tensor(std).to(self.device).reshape(1, self.model.num_channels, 1, 1)
         return (inputs * std) + mean
     
+    # All methods from here are placeholders -- Copied to provide inspiration
+    
     def _set_mode_targeted(self, mode, quiet):
         if "targeted" not in self.supported_mode:
             raise ValueError("Targeted mode is not supported.")
