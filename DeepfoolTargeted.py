@@ -1,11 +1,11 @@
 #Targeted deepfool attack
 #contents
 #Targeted deepfool definition Line 10
-#Batch unloader Line 88
-#Run targeted deepfool Line 98
-#print perturbations Line 125
-#print results Line 136
-#data processing Line 178
+#Batch unloader Line 87
+#Run targeted deepfool Line 97
+#print perturbations Line 124
+#print results Line 135
+#data processing Line 177
 
 #Targeted deepfool definition start
 import numpy as np
@@ -44,7 +44,6 @@ def deepfoolTargeted(image, net, indexOfAttackedLabel, numClasses=10, step=0.02,
     if indexOfAttackedLabel == label:
       iLoops = maxIterations + 1
     while attackedLabel != indexOfAttackedLabel and iLoops < maxIterations:
-        minPert = np.inf
         logits[0, indexesOfClass[0]].backward(retain_graph=True)
         origGrad = x.grad.data.cpu().numpy().copy()
         
