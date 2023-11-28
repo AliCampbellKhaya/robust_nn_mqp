@@ -3,7 +3,7 @@ from Attacks.BaseAttack import BaseAttack
 
 class FGSM(BaseAttack):
     def __init__(self, model, device, targeted, eps):
-        super().__init__("FGSM", model, device, targeted)
+        super(FGSM, self).__init__("FGSM", model, device, targeted)
         self.eps = eps
 
     def forward(self, inputs, label):

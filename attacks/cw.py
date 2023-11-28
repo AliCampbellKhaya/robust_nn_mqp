@@ -2,12 +2,12 @@ import torch
 from Attacks.BaseAttack import BaseAttack
 
 class CW(BaseAttack):
-    def __init__(self, model, device, targeted, c, confidence, max_steps):
-        super().__init__("CW", model, device, targeted)
+    def __init__(self, model, device, targeted, c, max_steps, loss_function, optimizer):
+        super(CW, self).__init__("CW", model, device, targeted, loss_function, optimizer)
         self.c = c
         self.max_steps = max_steps
 
-    def forward(self, inputs, labels, loss_function, optimizer):
+    def forward(self, inputs, labels):
         inputs.requires_grad = True
 
         for _ in range(self.max_steps):
@@ -17,11 +17,11 @@ class CW(BaseAttack):
             # If Targeted loss is:
             #   -( loss(output, target) - loss(output(current pred/argmax)))
 
-            loss = loss_function(output, labels)
+            loss = self.loss_function(output, labels)
 
-            optimizer.zero_grad()
+            self.optimizer.zero_grad()
             loss.backward()
-            optimizer.step()
+            self.optimizer.step()
 
             input_grad = input.grad.data
 

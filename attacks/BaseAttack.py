@@ -1,11 +1,13 @@
 import torch
 
 class BaseAttack():
-    def __init__(self, name, model, device, targeted):
+    def __init__(self, name, model, device, targeted, loss_function, optimizer):
         self.attack = name
         self.model = model
         self.device = device
         self.targeted = targeted
+        self.loss_function = loss_function
+        self.optimizer = optimizer
 
     def forward(self, images, labels=None):
         """Should be overwritten by every subclass"""

@@ -151,9 +151,36 @@ class BaseNeuralNetwork(nn.Module):
         # Preds are the array of probability percentage
         return cr, preds
     
-    def test_attack_model(self):
-        """TODO"""
-        raise NotImplementedError
+    def test_attack_model(self, loss_function, attack):
+        self.eval()
+
+        total_test_loss = 0
+        total_test_correct = 0
+        preds = []
+
+        for (inputs, labels) in self.test_dataloader:
+            (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
+
+            init_pred = self(inputs)
+            init_loss = loss_function(init_pred, labels)
+
+            self.zero_grad()
+            init_loss.backward()
+
+            input_attack = attack.forward(inputs, labels)
+
+            attack_pred = self(input_attack)
+            attack_loss = loss_function(attack_pred, labels)
+
+            total_test_loss += attack_loss
+            total_test_correct += (attack_pred.argmax(1) == labels).type(torch.float).sum().item()
+
+            preds.extend(attack_pred.argmax(axis=1).cpu().numpy())
+
+        cr = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
+
+        # Preds are the array of probability percentage
+        return cr, preds
     
     def save_model(self):
         """TODO"""
