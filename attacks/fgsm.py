@@ -2,8 +2,8 @@ import torch
 from Attacks.BaseAttack import BaseAttack
 
 class FGSM(BaseAttack):
-    def __init__(self, model, device, targeted, eps):
-        super(FGSM, self).__init__("FGSM", model, device, targeted)
+    def __init__(self, model, device, targeted, loss_function, optimizer, eps):
+        super(FGSM, self).__init__("FGSM", model, device, targeted, loss_function, optimizer)
         self.eps = eps
 
     def forward(self, input, label):
