@@ -8,8 +8,8 @@ from torch.utils.data import DataLoader
 
 class MNISTNeuralNetwork(BaseNeuralNetwork):
     def __init__(self, device, train_split, batch_size):
-        train_data_init = train_data_init = datasets.MNIST(root="data", train=True, download=True, transform=ToTensor())
-        test_data = datasets.MNIST(root="data", train=True, download=True, transform=ToTensor())
+        train_data_init = datasets.MNIST(root="data", train=True, download=True, transform=ToTensor())
+        test_data = datasets.MNIST(root="data", train=False, download=True, transform=ToTensor())
 
         train_sample_size = int(len(train_data_init) * train_split)
         val_sample_size = len(train_data_init) - train_sample_size

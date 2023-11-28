@@ -15,11 +15,12 @@ class TrafficNeuralNetwork(BaseNeuralNetwork):
             v2.ToImage(),
             v2.ToDtype(torch.float32, scale=True),
             v2.Normalize(mean=CNN_MEAN, std=CNN_STD),
-            v2.Resize((250, 250)),
+            # resize(250, 250)
+            v2.Resize((255, 255)),
         ])
 
         train_data_init = datasets.GTSRB(root="data", split="train", download=True, transform=transforms)
-        test_data = datasets.GTSRB(root="data", train=True, split="test", transform=transforms)
+        test_data = datasets.GTSRB(root="data", split="test", download=True, transform=transforms)
 
         train_sample_size = int(len(train_data_init) * train_split)
         val_sample_size = len(train_data_init) - train_sample_size
@@ -31,4 +32,6 @@ class TrafficNeuralNetwork(BaseNeuralNetwork):
         test_dataloader = DataLoader(test_data, batch_size=batch_size)
 
         # num channels and features are hard coded
-        super(TrafficNeuralNetwork, self).__init__(device, 3, 9216, 10, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data)
+        # num channels = 968256, out features = 43
+        # resize 100 - 147456
+        super(TrafficNeuralNetwork, self).__init__(device, 3, 968256, 43, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data)

@@ -18,8 +18,8 @@ class PetNeuralNetwork(BaseNeuralNetwork):
             v2.Resize((250, 250)),
         ])
 
-        train_data_init = train_data_init = datasets.OxfordIIITPet(root="data", train=True, download=True, transform=transforms)
-        test_data = datasets.OxfordIIITPet(root="data", train=True, download=True, transform=transforms)
+        train_data_init = datasets.OxfordIIITPet(root="data", split="trainval", download=True, transform=transforms)
+        test_data = datasets.OxfordIIITPet(root="data", split="test", download=True, transform=transforms)
 
         train_sample_size = int(len(train_data_init) * train_split)
         val_sample_size = len(train_data_init) - train_sample_size
