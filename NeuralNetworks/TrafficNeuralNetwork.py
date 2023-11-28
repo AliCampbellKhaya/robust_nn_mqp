@@ -18,7 +18,7 @@ class TrafficNeuralNetwork(BaseNeuralNetwork):
             v2.Resize((250, 250)),
         ])
 
-        train_data_init = train_data_init = datasets.GTSRB(root="data", split="train", download=True, transform=transforms)
+        train_data_init = datasets.GTSRB(root="data", split="train", download=True, transform=transforms)
         test_data = datasets.GTSRB(root="data", train=True, split="test", transform=transforms)
 
         train_sample_size = int(len(train_data_init) * train_split)
