@@ -9,19 +9,19 @@ class BaseAttack():
         self.loss_function = loss_function
         self.optimizer = optimizer
 
-    def forward(self, images, labels=None):
+    def forward(self, input, labels=None):
         """Should be overwritten by every subclass"""
         raise NotImplementedError
 
-    def normalize(self, inputs, mean=[0.1307], std=[0.3081]):
+    def normalize(self, input, mean=[0.1307], std=[0.3081]):
         mean = torch.tensor(mean).to(self.device).reshape(1, self.model.num_channels, 1, 1)
         std = torch.tensor(std).to(self.device).reshape(1, self.model.num_channels, 1, 1)
-        return (inputs - mean) / std
+        return (input - mean) / std
     
-    def denormalize(self, inputs, mean=0.1307, std=0.3081):
+    def denormalize(self, input, mean=0.1307, std=0.3081):
         mean = torch.tensor(mean).to(self.device).reshape(1, self.model.num_channels, 1, 1)
         std = torch.tensor(std).to(self.device).reshape(1, self.model.num_channels, 1, 1)
-        return (inputs * std) + mean
+        return (input * std) + mean
     
     # All methods from here are placeholders -- Copied to provide inspiration
     

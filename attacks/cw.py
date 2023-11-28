@@ -7,11 +7,11 @@ class CW(BaseAttack):
         self.c = c
         self.max_steps = max_steps
 
-    def forward(self, inputs, labels):
-        inputs.requires_grad = True
+    def forward(self, input, labels):
+        input.requires_grad = True
 
         for _ in range(self.max_steps):
-            output = self.model(inputs)
+            output = self.model(input)
 
             # TODO: Make Targeted
             # If Targeted loss is:
