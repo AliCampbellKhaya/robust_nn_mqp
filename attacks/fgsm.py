@@ -1,5 +1,5 @@
 import torch
-import BaseAttack
+from Attacks.BaseAttack import BaseAttack
 
 class FGSM(BaseAttack):
     def __init__(self, model, device, targeted, eps):
@@ -14,5 +14,4 @@ class FGSM(BaseAttack):
         perturbed_image = torch.clamp(perturbed_image, 0, 1)
 
         return perturbed_image
-
     

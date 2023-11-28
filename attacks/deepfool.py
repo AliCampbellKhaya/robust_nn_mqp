@@ -1,5 +1,5 @@
 import torch
-import BaseAttack
+from Attacks.BaseAttack import BaseAttack
 
 class DeepFool(BaseAttack):
     def __init__(self, model, device, targeted):

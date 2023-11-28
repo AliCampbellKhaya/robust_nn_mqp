@@ -6,7 +6,7 @@ from sklearn.metrics import classification_report
 
 class BaseNeuralNetwork(nn.Module):
     def __init__(self, device, num_channels, num_features, num_out_features, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data):
-        super(BaseException, self).__init__()
+        super(BaseNeuralNetwork, self).__init__()
 
         self.device = device
         self.batch_size = batch_size
@@ -78,7 +78,7 @@ class BaseNeuralNetwork(nn.Module):
 
         return F.log_softmax(x, dim=1)
     
-    def train(self, loss_function, optimizer):
+    def train_model(self, loss_function, optimizer):
         self.train()
 
         total_train_loss = 0
@@ -128,7 +128,7 @@ class BaseNeuralNetwork(nn.Module):
         # Do I need to return the history??
         return self.history
     
-    def test(self, loss_function):
+    def test_model(self, loss_function):
         self.eval()
 
         total_test_loss = 0
@@ -151,14 +151,14 @@ class BaseNeuralNetwork(nn.Module):
         # Preds are the array of probability percentage
         return cr, preds
     
-    def test_attack(self):
+    def test_attack_model(self):
         """TODO"""
         raise NotImplementedError
     
-    def save(self):
+    def save_model(self):
         """TODO"""
         raise NotImplementedError
     
-    def load(self):
+    def load_model(self):
         """TODO"""
         raise NotImplementedError
