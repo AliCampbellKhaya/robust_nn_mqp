@@ -182,10 +182,9 @@ class BaseNeuralNetwork(nn.Module):
         # Preds are the array of probability percentage
         return cr, preds
     
-    def save_model(self):
-        """TODO"""
-        raise NotImplementedError
+    def save_model(self, model_name):
+        torch.save(self.state_dict(), f"{model_name}_model.pt")
+        print(f"Model {model_name} Saved")
     
-    def load_model(self):
-        """TODO"""
-        raise NotImplementedError
+    def load_model(self, model_name):
+        self.load_state_dict(torch.load(f"{model_name}_model.pt"))
