@@ -15,7 +15,8 @@ class PetNeuralNetwork(BaseNeuralNetwork):
             v2.ToImage(),
             v2.ToDtype(torch.float32, scale=True),
             v2.Normalize(mean=CNN_MEAN, std=CNN_STD),
-            v2.Resize((250, 250)),
+            # resize(32, 32)
+            v2.Resize((32, 32)),
         ])
 
         train_data_init = datasets.OxfordIIITPet(root="data", split="trainval", download=True, transform=transforms)

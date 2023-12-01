@@ -15,9 +15,8 @@ class TrafficNeuralNetwork(BaseNeuralNetwork):
             v2.ToImage(),
             v2.ToDtype(torch.float32, scale=True),
             v2.Normalize(mean=CNN_MEAN, std=CNN_STD),
-            # resize(250, 250)
-            v2.Resize((28, 28)),
-            v2.ToTensor()
+            # resize(32, 32)
+            v2.Resize((32, 32)),
         ])
 
         train_data_init = datasets.GTSRB(root="data", split="train", download=True, transform=transforms)

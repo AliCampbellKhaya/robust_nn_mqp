@@ -2,14 +2,23 @@ import torch
 from NeuralNetworks.BaseNeuralNetwork import BaseNeuralNetwork
 
 from torchvision import datasets
-from torchvision.transforms import ToTensor
+from torchvision.transforms import v2
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
 
 class MNISTNeuralNetwork(BaseNeuralNetwork):
     def __init__(self, device, train_split, batch_size):
-        train_data_init = datasets.MNIST(root="data", train=True, download=True, transform=ToTensor())
-        test_data = datasets.MNIST(root="data", train=False, download=True, transform=ToTensor())
+        CNN_MEAN = [0.485, 0.456, 0.406]
+        CNN_STD = [0.229, 0.224, 0.225]
+        transforms = v2.Compose([
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(mean=CNN_MEAN, std=CNN_STD),
+            # resize(32, 32)
+            v2.Resize((32, 32)),
+        ])
+        train_data_init = datasets.MNIST(root="data", train=True, download=True, transform=transforms)
+        test_data = datasets.MNIST(root="data", train=False, download=True, transform=transforms)
 
         train_sample_size = int(len(train_data_init) * train_split)
         val_sample_size = len(train_data_init) - train_sample_size
