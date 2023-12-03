@@ -8,11 +8,10 @@ class FGSM(BaseAttack):
 
     def forward(self, input, label):
         input_grad = input.grad.data
-        input_denorm = self.denormalize(input)
 
         sign_data_grad = input_grad.sign()
 
-        perturbed_input = input_denorm + self.eps * sign_data_grad
+        perturbed_input = input + self.eps * sign_data_grad
         perturbed_input = torch.clamp(perturbed_input, 0, 1)
 
         return self.normalize(perturbed_input)
