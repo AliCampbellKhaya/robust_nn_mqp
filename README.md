@@ -1,5 +1,6 @@
 # robust_nn_mqp
 Repository for work on Robust Neural Networks MQP
+Authors: Alasdair Campbell and Jared Lasalle
 
 The NeuralNetworks folder contains the neural network architecture (spelling) for 3 main datasets: MNIST, GTSRB and OxfordIIITPet.
 {Neural Network architecture: Todo}

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch.nn import functional as F
 
 from NeuralNetworks.MNISTNeuralNetwork import MNISTNeuralNetwork
 from Attacks.FGSM import FGSM
@@ -19,8 +20,8 @@ teacher_optimizer = torch.optim.Adam(teacher_model.parameters(), learning_rate)
 
 def distillation_loss(logits_student, logits_teacher):
     # Implement the distillation loss (e.g., cross-entropy)
-    soft_targets = nn.functional.softmax(logits_student / temperature, dim=1)
-    return nn.functional.kl_div(nn.functional.log_softmax(logits_teacher / temperature, dim=1),
+    soft_targets = F.log_softmax(logits_student / temperature, dim=1)
+    return F.kl_div(F.log_softmax(logits_teacher / temperature, dim=1),
                                 soft_targets, reduction='batchmean') * temperature
     
 print("Training Student")
