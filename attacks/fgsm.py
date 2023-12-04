@@ -14,5 +14,5 @@ class FGSM(BaseAttack):
         perturbed_input = input + self.eps * sign_data_grad
         perturbed_input = torch.clamp(perturbed_input, 0, 1)
 
-        return self.normalize(perturbed_input)
+        return perturbed_input
     

@@ -24,3 +24,5 @@ LGV
 
 Pixle
 {Attack Details: Todo}
+
+Defense contains the architecures and methods used to defend the neural networks against the adverserial attacks. Here are the results of the defenses.
