@@ -1,8 +1,8 @@
 #Contents
 #definitions  Line 7
-#batch unloader  Line 48
-#call pixle  Line 57
-#data processing and display images  Line 73
+#batch unloader  Line 52
+#call pixle  Line 61
+#data processing and display images  Line 77
 
 #definitions start
 def pixle(image, net, attackType):
@@ -13,26 +13,30 @@ def pixle(image, net, attackType):
 
 def pixleSwitchbasic(image, net):
   flatImage = image.view(-1)
+  #print(flatImage)
   indexes = []
   counter = 0
   for item in flatImage:
     indexes.append([item, counter])
+    counter = counter + 1
   #the image is now stored in a multidimensional array where indexes[number][0] is the value of the given pixel and indexes[number][1] is the index of the pixel in the original image
+  
   #indexes now must be sorted
   indexes = sorted(indexes)
+  #print(indexes)
   attackedImage = flatImage
   swapMe = 0
   counterTwo = 0
-  for item in indexes:
-    if swapMe == 0:
-      swapMe = 1
+  
+  for counterTwo in range(len(indexes)):
+    if counterTwo % 2 == 0:
+      counterTwo = counterTwo + 1
       continue
-    else:
-      swapMe = 0
     #swap pixels of indexes n and n-1
-    attackedImage[item[1]] = indexes[counterTwo-1][0]
-    attackedImage[counterTwo-1] = item[1]
+    attackedImage[indexes[counterTwo][1]] = indexes[counterTwo-1][0]
+    attackedImage[counterTwo-1] = indexes[counterTwo-1][0]
     counterTwo = counterTwo + 1
+  
   attackedImage = attackedImage.view(image.size())
   return attackedImage
 

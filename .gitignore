@@ -1,5 +1,5 @@
 data/
 /NeuralNetworks/__pycache__
 /Attacks/__pycache__
-.out
-.sh
+*.out
+*.sh
