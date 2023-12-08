@@ -35,32 +35,32 @@ class BaseNeuralNetwork(nn.Module):
 
         # Layers 2 and 3 not needed - included in case of need in future 
 
-        # self.conv_layer2 = nn.Sequential(
-        #     nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1),
-        #     nn.BatchNorm2d(128),
-        #     nn.ReLU(inplace=True),
-        #     nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1),
-        #     nn.ReLU(inplace=True),
-        #     nn.MaxPool2d(kernel_size=2, stride=2),
-        #     nn.Dropout2d(p=0.1)
-        # )
+        self.conv_layer2 = nn.Sequential(
+            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout2d(p=0.1)
+        )
     
-        # self.conv_layer3 = nn.Sequential(
-        #     nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=1),
-        #     nn.BatchNorm2d(256),
-        #     nn.ReLU(inplace=True),
-        #     nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1),
-        #     nn.ReLU(inplace=True),
-        #     nn.MaxPool2d(kernel_size=2, stride=2),
-        #     nn.Dropout2d(p=0.1)
-        # )
+        self.conv_layer3 = nn.Sequential(
+            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Dropout2d(p=0.1)
+        )
     
         self.fc_layer = nn.Sequential(
             nn.Linear(in_features=num_features, out_features=512),
             nn.ReLU(inplace=True),
             nn.Linear(in_features=512, out_features=256),
             nn.ReLU(inplace=True),
-            #nn.Dropout(p=0.1),
+            nn.Dropout(p=0.1),
             nn.Linear(in_features=256, out_features=num_out_features)
         )
 
@@ -68,8 +68,8 @@ class BaseNeuralNetwork(nn.Module):
         x = self.conv_layer1(x)
 
         # Layers 2 and 3 not needed - included in case of need in future 
-        #x = self.conv_layer2(x)
-        #x = self.conv_layer3(x)
+        x = self.conv_layer2(x)
+        x = self.conv_layer3(x)
 
         # Flatten input into 1D vector
         x = x.view(x.size(0), -1)
