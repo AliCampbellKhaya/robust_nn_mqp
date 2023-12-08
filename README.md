@@ -26,4 +26,22 @@ LGV
 Pixle
 {Attack Details: Todo}
 
-Defense contains the architecures and methods used to defend the neural networks against the adverserial attacks. Here are the results of the defenses.
+Defense contains the architecures and methods used to defend the neural networks against the adverserial attacks.
+The defenses are:
+
+Adverserial Example Training:
+{Defense Details: Todo}
+
+Defensive Distillation
+{Defense Details: Todo}
+
+Feature Squeezing
+{Defense Details: Todo}
+
+Gradient Masking
+{Defense Details: Todo}
+
+Universal Perturbations
+{Defense Details: Todo}
+
+Here are the results of the defenses.
