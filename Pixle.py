@@ -1,13 +1,18 @@
 #Contents
 #definitions  Line 7
-#batch unloader  Line 52
-#call pixle  Line 61
-#data processing and display images  Line 77
+#batch unloader  Line 63
+#call pixle  Line 72
+#data processing and display images  Line 88
 
 #definitions start
+import numpy as np
+from torch.autograd import Variable
+import copy
 def pixle(image, net, attackType):
   if attackType == 0:
     return pixleSwitchbasic(image, net)
+  elif attackType == 1:
+    return pixleRandomRows(image, 12, 17, net)
   else:
     return pixleRandom(image, net)
 
@@ -20,14 +25,14 @@ def pixleSwitchbasic(image, net):
     indexes.append([item, counter])
     counter = counter + 1
   #the image is now stored in a multidimensional array where indexes[number][0] is the value of the given pixel and indexes[number][1] is the index of the pixel in the original image
-  
+
   #indexes now must be sorted
   indexes = sorted(indexes)
   #print(indexes)
   attackedImage = flatImage
   swapMe = 0
   counterTwo = 0
-  
+
   for counterTwo in range(len(indexes)):
     if counterTwo % 2 == 0:
       counterTwo = counterTwo + 1
@@ -36,10 +41,16 @@ def pixleSwitchbasic(image, net):
     attackedImage[indexes[counterTwo][1]] = indexes[counterTwo-1][0]
     attackedImage[counterTwo-1] = indexes[counterTwo-1][0]
     counterTwo = counterTwo + 1
-  
+
   attackedImage = attackedImage.view(image.size())
   return attackedImage
 
+def pixleRandomRows(image, startRow, endRow, net):
+    section = image[:, startRow:endRow, :].view(-1)
+    indexes = torch.randperm(section.size(0))
+    shuffled = section[indexes]
+    image[:, startRow: endRow, :] = shuffled.view(image[:, startRow:endRow, :].size())
+    return image
 
 def pixleRandom(image, net):
   flatImage = image.view(-1)
