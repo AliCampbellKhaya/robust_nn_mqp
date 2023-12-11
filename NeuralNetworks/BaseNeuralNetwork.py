@@ -140,6 +140,7 @@ class BaseNeuralNetwork(nn.Module):
         total_test_loss = 0
         total_test_correct = 0
         preds = []
+        preds_true = []
 
         for (inputs, labels) in self.test_dataloader:
             (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
@@ -151,11 +152,13 @@ class BaseNeuralNetwork(nn.Module):
             total_test_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
 
             preds.extend(pred.argmax(axis=1).cpu().numpy())
+            preds_true.extend(labels.cpu().numpy())
 
-        cr = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
+        cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
+        cr2 = classification_report(np.array(preds_true), np.array(preds)) # target_names =
 
         # Preds are the array of probability percentage
-        return cr, preds
+        return cr1, cr2, preds
     
     def test_attack_model(self, loss_function, attack):
         self.eval()
@@ -163,6 +166,7 @@ class BaseNeuralNetwork(nn.Module):
         total_test_loss = 0
         total_test_correct = 0
         preds = []
+        preds_true = []
 
         for (inputs, labels) in self.test_dataloader:
             (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
@@ -182,11 +186,13 @@ class BaseNeuralNetwork(nn.Module):
             total_test_correct += (attack_pred.argmax(1) == labels).type(torch.float).sum().item()
 
             preds.extend(attack_pred.argmax(axis=1).cpu().numpy())
+            preds_true.extend(labels.cpu().numpy())
 
-        cr = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
+        cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
+        cr2 = classification_report(np.array(preds_true), np.array(preds)) # target_names =
 
         # Preds are the array of probability percentage
-        return cr, preds
+        return cr1, cr2, preds
     
     def display_images(self, examples):
         cnt = 0
