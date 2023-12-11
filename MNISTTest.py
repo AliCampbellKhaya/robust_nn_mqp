@@ -4,6 +4,10 @@ import torch.nn as nn
 from NeuralNetworks.MNISTNeuralNetwork import MNISTNeuralNetwork
 from Attacks.FGSM import FGSM
 from Attacks.CW import CW
+from Attacks.DeepFool import DeepFool
+from Attacks.IFGSM import IFGSM
+from Attacks.LGV import LGV
+from Attacks.Pixle import Pixle
 
 device = torch.device("cuda")
 model = MNISTNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
@@ -23,10 +27,26 @@ fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 0.1)
 cr, preds = model.test_attack_model(loss_function, fgsm_attack)
 print(cr)
 
-fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 0.2)
+ifgsm_attack = IFGSM(model, device, False, loss_function, optimizer, 0.1)
 cr, preds = model.test_attack_model(loss_function, fgsm_attack)
 print(cr)
 
-# cw_attack = CW(model, device, False, 0.1, 20, loss_function, optimizer)
-# cr, preds = model.test_attack_model(loss_function, cw_attack)
-# print(cr)
+cw_attack = CW(model, device, False, 0.1, 20, loss_function, optimizer)
+cr, preds = model.test_attack_model(loss_function, cw_attack)
+print(cr)
+
+deepfool_attack = DeepFool()
+cr, preds = model.test_attack_model(loss_function, deepfool_attack)
+print(cr)
+
+jsma_attack = JSMA()
+cr, preds = model.test_attack_model(loss_function, jsma_attack)
+print(cr)
+
+lgv_attack = LGV()
+cr, preds = model.test_attack_model(loss_function, lgv_attack)
+print(cr)
+
+pixle_attack = Pixle()
+cr, preds = model.test_attack_model(loss_function, pixle_attack)
+print(cr)
