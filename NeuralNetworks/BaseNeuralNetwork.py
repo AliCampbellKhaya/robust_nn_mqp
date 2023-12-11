@@ -5,8 +5,10 @@ import numpy as np
 from sklearn.metrics import classification_report
 
 class BaseNeuralNetwork(nn.Module):
-    def __init__(self, device, num_channels, num_features, num_out_features, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data):
+    def __init__(self, dataset_name, device, num_channels, num_features, num_out_features, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data):
         super(BaseNeuralNetwork, self).__init__()
+
+        self.dataset_name = dataset_name
 
         self.device = device
         self.batch_size = batch_size
@@ -120,6 +122,9 @@ class BaseNeuralNetwork(nn.Module):
         train_correct = total_train_correct / len(self.train_dataloader.dataset)
         val_correct = total_val_correct / len(self.val_dataloader.dataset)
 
+        if avg_val_loss < min(self.history["val_loss"]):
+            self.save_model(self.dataset_name)
+
         self.history["train_loss"].append(avg_train_loss.cpu().detach().numpy())
         self.history["train_acc"].append(train_correct)
         self.history["val_loss"].append(avg_val_loss.cpu().detach().numpy())
@@ -183,7 +188,7 @@ class BaseNeuralNetwork(nn.Module):
         return cr, preds
     
     def save_model(self, model_name):
-        torch.save(self.state_dict(), f"{model_name}_model.pt")
+        torch.save(self.state_dict(), f"SavedModels/{model_name}_model.pt")
         print(f"Model {model_name} Saved")
     
     def load_model(self, model_name):
