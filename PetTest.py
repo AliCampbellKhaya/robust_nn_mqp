@@ -16,10 +16,7 @@ epochs = 5
 loss_function = nn.NLLLoss()
 optimizer = torch.optim.Adam(model.parameters(), learning_rate)
 
-for e in range(epochs):
-    print(f"Epoch {e+1}")
-    print(model.train_model(loss_function=loss_function, optimizer=optimizer))
-    print("-"*50)
+model.load_model()
 
 cr, preds = model.test_model(loss_function)
 print(cr)

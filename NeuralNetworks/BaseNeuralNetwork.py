@@ -202,9 +202,9 @@ class BaseNeuralNetwork(nn.Module):
         plt.tight_layout()
         plt.show()
     
-    def save_model(self, model_name):
-        torch.save(self.state_dict(), f"SavedModels/{model_name}_model.pt")
-        print(f"Model {model_name} Saved")
+    def save_model(self):
+        torch.save(self.state_dict(), f"SavedModels/{self.dataset_name}_model.pt")
+        print(f"Model {self.dataset_name} Saved")
     
-    def load_model(self, model_name):
-        self.load_state_dict(torch.load(f"{model_name}_model.pt"))
+    def load_model(self):
+        self.load_state_dict(torch.load(f"SavedModels/{self.dataset_name}_model.pt"))
