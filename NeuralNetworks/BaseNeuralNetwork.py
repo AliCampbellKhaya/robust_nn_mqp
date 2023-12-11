@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 
 class BaseNeuralNetwork(nn.Module):
@@ -186,6 +187,20 @@ class BaseNeuralNetwork(nn.Module):
 
         # Preds are the array of probability percentage
         return cr, preds
+    
+    def display_images(self, examples):
+        cnt = 0
+        plt.figure(figsize=(8,10))
+        for i in range(len(examples)):
+            cnt += 1
+            plt.subplot(1, 5, cnt)
+            plt.xticks([], [])
+            plt.yticks([], [])
+            preds, img = examples[i]
+            plt.title(f"{preds.argmax(1)[0]}")
+            plt.imshow(img[0,:,:], cmap="gray")
+        plt.tight_layout()
+        plt.show()
     
     def save_model(self, model_name):
         torch.save(self.state_dict(), f"SavedModels/{model_name}_model.pt")

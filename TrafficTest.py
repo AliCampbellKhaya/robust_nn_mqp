@@ -8,8 +8,7 @@ from Attacks.CW import CW
 print("Test for Traffic")
 
 device = torch.device("cuda")
-model = TrafficNeuralNetwork(device, train_split=0.8, batch_size=16)
-model = model.to(device)
+model = TrafficNeuralNetwork(device, train_split=0.8, batch_size=16).to(device)
 
 # Between 1e-3 and 1e-5
 learning_rate = 1e-4
