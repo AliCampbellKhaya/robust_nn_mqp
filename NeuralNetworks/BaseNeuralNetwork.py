@@ -120,13 +120,14 @@ class BaseNeuralNetwork(nn.Module):
         # Do I need to return the history??
         return self.history
     
-    def test_model(self, loss_function):
+    def test_model(self, loss_function, generate_examples):
         self.eval()
 
         total_test_loss = 0
         total_test_correct = 0
         preds = []
         preds_true = []
+        examples = []
 
         for (inputs, labels) in self.test_dataloader:
             (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
@@ -140,19 +141,24 @@ class BaseNeuralNetwork(nn.Module):
             preds.extend(pred.argmax(axis=1).cpu().numpy())
             preds_true.extend(labels.cpu().numpy())
 
+            if generate_examples:
+                if len(examples) < 5:
+                    examples.append( (pred, inputs.squeeze().detach().cpu().numpy()) )
+
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
 
         # Preds are the array of probability percentage
         return cr, preds
     
-    def test_attack_model(self, loss_function, attack):
+    def test_attack_model(self, loss_function, attack, generate_examples):
         self.eval()
 
         total_test_loss = 0
         total_test_correct = 0
         preds = []
         preds_true = []
+        examples = []
 
         for (inputs, labels) in self.test_dataloader:
             (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
@@ -173,6 +179,10 @@ class BaseNeuralNetwork(nn.Module):
 
             preds.extend(attack_pred.argmax(axis=1).cpu().numpy())
             preds_true.extend(labels.cpu().numpy())
+
+            if generate_examples:
+                if len(examples) < 5:
+                    examples.append( (attack_pred, inputs.squeeze().detach().cpu().numpy()) )
 
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
