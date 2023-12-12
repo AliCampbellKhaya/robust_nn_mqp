@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from NeuralNetworks.MNISTNeuralNetwork import MNISTNeuralNetwork
 
-device = torch.device("cuda")
+device = torch.device("cpu")
 model = MNISTNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
 
 # Between 1e-3 and 1e-5
@@ -17,6 +17,5 @@ for e in range(epochs):
     print(model.train_model(loss_function=loss_function, optimizer=optimizer))
     print("-"*50)
 
-cr1, cr2, preds = model.test_model(loss_function)
-print(cr1)
-print(cr2)
+cr, preds = model.test_model(loss_function)
+print(cr)

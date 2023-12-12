@@ -36,23 +36,11 @@ class BaseNeuralNetwork(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2)
         )
 
-        # Layers 2 and 3 not needed - included in case of need in future 
-
         self.conv_layer2 = nn.Sequential(
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1),
             nn.BatchNorm2d(128),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Dropout2d(p=0.1)
-        )
-    
-        self.conv_layer3 = nn.Sequential(
-            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Dropout2d(p=0.1)
@@ -70,9 +58,7 @@ class BaseNeuralNetwork(nn.Module):
     def forward(self, x):
         x = self.conv_layer1(x)
 
-        # Layers 2 and 3 not needed - included in case of need in future 
         x = self.conv_layer2(x)
-        x = self.conv_layer3(x)
 
         # Flatten input into 1D vector
         x = x.view(x.size(0), -1)
@@ -123,13 +109,13 @@ class BaseNeuralNetwork(nn.Module):
         train_correct = total_train_correct / len(self.train_dataloader.dataset)
         val_correct = total_val_correct / len(self.val_dataloader.dataset)
 
-        if avg_val_loss < min(self.history["val_loss"]):
-            self.save_model(self.dataset_name)
-
         self.history["train_loss"].append(avg_train_loss.cpu().detach().numpy())
         self.history["train_acc"].append(train_correct)
         self.history["val_loss"].append(avg_val_loss.cpu().detach().numpy())
         self.history["val_acc"].append(val_correct)
+
+        if avg_val_loss.cpu().detach().numpy() <= min(self.history["val_loss"]):
+            self.save_model()
 
         # Do I need to return the history??
         return self.history
@@ -154,11 +140,11 @@ class BaseNeuralNetwork(nn.Module):
             preds.extend(pred.argmax(axis=1).cpu().numpy())
             preds_true.extend(labels.cpu().numpy())
 
-        cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
-        cr2 = classification_report(np.array(preds_true), np.array(preds)) # target_names =
+        #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
+        cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
 
         # Preds are the array of probability percentage
-        return cr1, cr2, preds
+        return cr, preds
     
     def test_attack_model(self, loss_function, attack):
         self.eval()
@@ -188,11 +174,11 @@ class BaseNeuralNetwork(nn.Module):
             preds.extend(attack_pred.argmax(axis=1).cpu().numpy())
             preds_true.extend(labels.cpu().numpy())
 
-        cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
-        cr2 = classification_report(np.array(preds_true), np.array(preds)) # target_names =
+        #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
+        cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
 
         # Preds are the array of probability percentage
-        return cr1, cr2, preds
+        return cr, preds
     
     def display_images(self, examples):
         cnt = 0

@@ -32,4 +32,4 @@ class PetNeuralNetwork(BaseNeuralNetwork):
         test_dataloader = DataLoader(test_data, batch_size=batch_size)
 
         # num channels and features are hard coded
-        super(PetNeuralNetwork, self).__init__("Pet", device, 3, 9216, 10, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data)
+        super(PetNeuralNetwork, self).__init__("Pet", device, 3, 3200, 37, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data)

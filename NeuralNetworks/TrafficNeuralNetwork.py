@@ -34,4 +34,4 @@ class TrafficNeuralNetwork(BaseNeuralNetwork):
         # num channels and features are hard coded
         # num channels = 968256, out features = 43
         # resize 100 - 147456
-        super(TrafficNeuralNetwork, self).__init__("Traffic", device, 3, 9216, 43, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data)
+        super(TrafficNeuralNetwork, self).__init__("Traffic", device, 3, 3200, 43, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data)

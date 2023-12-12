@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from NeuralNetworks.TrafficNeuralNetwork import TrafficNeuralNetwork
 
-device = torch.device("cuda")
+device = torch.device("cpu")
 model = TrafficNeuralNetwork(device, train_split=0.8, batch_size=16).to(device)
 
 # Between 1e-3 and 1e-5
