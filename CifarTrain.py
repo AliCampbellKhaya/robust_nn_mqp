@@ -21,5 +21,5 @@ for e in range(epochs):
     print(model.train_model(loss_function=loss_function, optimizer=optimizer))
     print("-"*50)
 
-cr, preds = model.test_model(loss_function, False)
+cr, preds = model.test_model(loss_function)
 print(cr)
