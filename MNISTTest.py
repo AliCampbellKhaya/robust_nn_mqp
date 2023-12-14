@@ -39,13 +39,13 @@ model.load_model()
 # cr, preds = model.test_attack_model(loss_function, fgsm_attack)
 # print(cr)
 
-# ifgsm_attack = IFGSM(model, device, False, loss_function, optimizer, 0.1)
-# cr, preds = model.test_attack_model(loss_function, fgsm_attack)
-# print(cr)
-
-cw_attack = CW(model, device, False, 0.1, 0, 20, loss_function, optimizer)
-cr, preds = model.test_attack_model(loss_function, cw_attack)
+ifgsm_attack = IFGSM(model, device, False, loss_function, optimizer, 0.1, 20)
+cr, preds = model.test_attack_model(loss_function, ifgsm_attack)
 print(cr)
+
+# cw_attack = CW(model, device, False, 0.1, 0, 20, loss_function, optimizer)
+# cr, preds = model.test_attack_model(loss_function, cw_attack)
+# print(cr)
 
 # deepfool_attack = DeepFool()
 # cr, preds = model.test_attack_model(loss_function, deepfool_attack)

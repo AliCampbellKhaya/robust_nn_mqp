@@ -204,3 +204,10 @@ class BaseNeuralNetwork(nn.Module):
     
     def load_model(self):
         self.load_state_dict(torch.load(f"SavedModels/{self.dataset_name}_model.pt"))
+
+    def save_defense_model(self, defense_name):
+        torch.save(self.state_dict(), f"SavedModels/{self.dataset_name}_{defense_name}_model.pt")
+        print(f"Model {self.dataset_name} with Defense {defense_name} Saved")
+
+    def load_defense_model(self, defense_name):
+        self.load_state_dict(torch.load(f"SavedModels/{self.dataset_name}_{defense_name}_model.pt"))

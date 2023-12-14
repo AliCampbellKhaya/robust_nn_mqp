@@ -8,39 +8,39 @@ class CW(BaseAttack):
         self.confidence = confidence
         self.max_steps = max_steps
 
-    def forward(self, input, labels):
+    def forward(self, input, label):
         input = input.clone().detach().to(self.device)
-        labels = labels.clone().detach().to(self.device)
+        label = label.clone().detach().to(self.device)
 
         input.requires_grad = True
 
-        for i in range(self.max_steps):
+        for _ in range(self.max_steps):
             init_pred = self.model(input)
 
-            loss = self.loss_function(init_pred, labels)
+            loss = self.loss_function(init_pred, label)
 
             self.optimizer.zero_grad()
             loss.backward(retain_graph=True)
             self.optimizer.step()
 
-            # input_grad = torch.autograd.grad(loss, input, retain_graph=True, create_graph=True)[0]
+            # Checks to see if image is missclassified - ie attack has worked, so terminate for loop
+            if init_pred.argmax(1)[0] != label[0]:
+                break
+
             input_grad = input.grad.data
 
-            #normalization = torch.norm(input_grad.view(input_grad.size(0), -1), dim=1, keepdim=True)
             normalization = torch.norm(input_grad, dim=1, keepdim=True)
 
-            perturbation = input_grad * (self.c / normalization)  # Avoid division by zero
+            perturbation = input_grad * (self.c / normalization)
 
             input = input + perturbation
 
             # Clip perturbed input to be within the valid range [0, 1]
             input = torch.clamp(input, 0, 1)
 
-            #input.requires_grad = True
-            #input.requires_grad_(True)
             input.requires_grad_(True).retain_grad()
 
-            print(i)
+            #if (self.model(input) != labels)
 
         return input
 
