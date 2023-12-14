@@ -1,6 +1,6 @@
 import torch
-from Defenses.BaseDefence import BaseDefence
+from Defenses.BaseDefense import BaseDefense
 
-class AdverserialExamples(BaseDefence):
+class AdverserialExamples(BaseDefense):
     def __init__(self):
         super(AdverserialExamples, self).__init__()

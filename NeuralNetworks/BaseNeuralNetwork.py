@@ -120,6 +120,65 @@ class BaseNeuralNetwork(nn.Module):
         # Do I need to return the history??
         return self.history
     
+    def train_model_defence(self, loss_function, optimizer, attack, defense):
+        self.train()
+
+        total_train_loss = 0
+        total_val_loss = 0
+
+        total_train_correct = 0
+        total_val_correct = 0
+    
+        for (inputs, labels) in self.train_dataloader:
+            (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
+    
+            optimizer.zero_grad()
+
+            inputs_attack = attack.forward(inputs, labels)
+            inputs_defense = defense.forward(inputs_attack, labels)
+        
+            pred = self(torch.from_numpy(inputs_defense).float())
+            loss = loss_function(pred, labels)
+            
+            loss.backward()
+            optimizer.step()
+
+            total_train_loss += loss
+            total_train_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
+
+        with torch.no_grad():
+            self.eval()
+
+            for (inputs, labels) in self.val_dataloader:
+                (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
+
+                inputs_attack = attack.forward(inputs, labels)
+                inputs_defense = defense.forward(inputs_attack, labels)
+
+                pred = self(inputs_defense)
+                loss = loss_function(pred, labels)
+
+                total_val_loss += loss
+                total_val_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
+
+        # Train and Val Steps
+        avg_train_loss = total_train_loss / ( len(self.val_dataloader.dataset) / self.batch_size)
+        avg_val_loss = total_val_loss / ( len(self.val_dataloader.dataset) / self.batch_size)
+
+        train_correct = total_train_correct / len(self.train_dataloader.dataset)
+        val_correct = total_val_correct / len(self.val_dataloader.dataset)
+
+        self.history["train_loss"].append(avg_train_loss.cpu().detach().numpy())
+        self.history["train_acc"].append(train_correct)
+        self.history["val_loss"].append(avg_val_loss.cpu().detach().numpy())
+        self.history["val_acc"].append(val_correct)
+
+        if avg_val_loss.cpu().detach().numpy() <= min(self.history["val_loss"]):
+            self.save_defense_model(defense.defense)
+
+        # Do I need to return the history??
+        return self.history
+    
     def test_model(self, loss_function):
         self.eval()
 
@@ -167,6 +226,41 @@ class BaseNeuralNetwork(nn.Module):
             input_attack = attack.forward(inputs, labels)
 
             attack_pred = self(input_attack)
+            attack_loss = loss_function(attack_pred, labels)
+
+            total_test_loss += attack_loss
+            total_test_correct += (attack_pred.argmax(1) == labels).type(torch.float).sum().item()
+
+            preds.extend(attack_pred.argmax(axis=1).cpu().numpy())
+            preds_true.extend(labels.cpu().numpy())
+
+        #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
+        cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
+
+        # Preds are the array of probability percentage
+        return cr, preds
+    
+    def test_defense_model(self, loss_function, attack, defense):
+        self.eval()
+
+        total_test_loss = 0
+        total_test_correct = 0
+        preds = []
+        preds_true = []
+
+        for (inputs, labels) in self.test_dataloader:
+            (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
+
+            init_pred = self(inputs)
+            init_loss = loss_function(init_pred, labels)
+
+            self.zero_grad()
+            init_loss.backward()
+
+            input_attack = attack.forward(inputs, labels)
+            input_defense = defense.forward(input_attack, labels)
+
+            attack_pred = self(torch.from_numpy(input_defense).float())
             attack_loss = loss_function(attack_pred, labels)
 
             total_test_loss += attack_loss

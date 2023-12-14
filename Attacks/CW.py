@@ -24,8 +24,8 @@ class CW(BaseAttack):
             self.optimizer.step()
 
             # Checks to see if image is missclassified - ie attack has worked, so terminate for loop
-            if init_pred.argmax(1)[0] != label[0]:
-                break
+            # if init_pred.argmax(1)[0] != label[0]:
+            #     break
 
             input_grad = input.grad.data
 

@@ -9,6 +9,8 @@ from Attacks.IFGSM import IFGSM
 from Attacks.LGV import LGV
 from Attacks.Pixle import Pixle
 
+from Defenses.FeatureSqueezing import FeatureSqueezing
+
 device = torch.device("cpu")
 model = MNISTNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
 
@@ -20,8 +22,8 @@ optimizer = torch.optim.Adam(model.parameters(), learning_rate)
 
 model.load_model()
 
-# cr, preds = model.test_model(loss_function)
-# print(cr)
+cr, preds = model.test_model(loss_function)
+print(cr)
 
 # fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 0.01)
 # cr, preds = model.test_attack_model(loss_function, fgsm_attack)
@@ -40,8 +42,12 @@ model.load_model()
 # print(cr)
 
 ifgsm_attack = IFGSM(model, device, False, loss_function, optimizer, 0.1, 20)
-cr, preds = model.test_attack_model(loss_function, ifgsm_attack)
-print(cr)
+# cr, preds = model.test_attack_model(loss_function, ifgsm_attack)
+# print(cr)
+
+fs_defense = FeatureSqueezing(model)
+# print(model.train_model_defence(loss_function, optimizer, ifgsm_attack, fs_defense))
+cr, preds = model.test_defense_model(loss_function, ifgsm_attack, fs_defense)
 
 # cw_attack = CW(model, device, False, 0.1, 0, 20, loss_function, optimizer)
 # cr, preds = model.test_attack_model(loss_function, cw_attack)
