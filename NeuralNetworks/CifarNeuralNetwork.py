@@ -16,7 +16,7 @@ class CifarNeuralNetwork(BaseNeuralNetwork):
             v2.ToDtype(torch.float32, scale=True),
             v2.Normalize(mean=CNN_MEAN, std=CNN_STD),
             # resize(32, 32)
-            v2.Resize((32, 32)),
+            v2.Resize((32, 32), antialias=True),
         ])
 
         train_data_init = datasets.CIFAR10(root="data", train=True, download=True, transform=transforms)

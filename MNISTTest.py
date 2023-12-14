@@ -20,16 +20,16 @@ optimizer = torch.optim.Adam(model.parameters(), learning_rate)
 
 model.load_model()
 
-cr, preds = model.test_model(loss_function)
-print(cr)
+# cr, preds = model.test_model(loss_function)
+# print(cr)
 
 # fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 0.01)
 # cr, preds = model.test_attack_model(loss_function, fgsm_attack)
 # print(cr)
 
-fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 0.2)
-cr, preds = model.test_attack_model(loss_function, fgsm_attack)
-print(cr)
+# fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 0.2)
+# cr, preds = model.test_attack_model(loss_function, fgsm_attack)
+# print(cr)
 
 # fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 0.4)
 # cr, preds = model.test_attack_model(loss_function, fgsm_attack)

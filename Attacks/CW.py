@@ -14,16 +14,16 @@ class CW(BaseAttack):
 
         input.requires_grad = True
 
-        for _ in range(self.max_steps):
-            output = self.model(input)
+        for i in range(self.max_steps):
+            init_pred = self.model(input)
 
-            loss = self.loss_function(output, labels)
+            loss = self.loss_function(init_pred, labels)
 
             self.optimizer.zero_grad()
-            loss.backward()
+            loss.backward(retain_graph=True)
             self.optimizer.step()
 
-            input_grad = torch.autograd.grad(loss, input, retain_graph=True, create_graph=True)[0]
+            # input_grad = torch.autograd.grad(loss, input, retain_graph=True, create_graph=True)[0]
             input_grad = input.grad.data
 
             #normalization = torch.norm(input_grad.view(input_grad.size(0), -1), dim=1, keepdim=True)
@@ -35,6 +35,12 @@ class CW(BaseAttack):
 
             # Clip perturbed input to be within the valid range [0, 1]
             input = torch.clamp(input, 0, 1)
+
+            #input.requires_grad = True
+            #input.requires_grad_(True)
+            input.requires_grad_(True).retain_grad()
+
+            print(i)
 
         return input
 
