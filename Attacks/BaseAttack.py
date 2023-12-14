@@ -31,6 +31,8 @@ class BaseAttack():
         else:
             self.targeted - False   
 
+    def get_target_label():
+        pass
 
     def target_by_label():
         pass
