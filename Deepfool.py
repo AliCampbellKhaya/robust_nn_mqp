@@ -5,7 +5,7 @@
 #Print Perturbations  Line 114
 #Display deepfool output  Line 124
 #Data processing  Line 170
-
+#Defenses Line 209
 #deepfool definition and algorithm start
 import numpy as np
 from torch.autograd import Variable
@@ -205,3 +205,108 @@ print("\n")
 for i in range(10): #Take and print averages
   print(f"Average iloop iterations for number {i} is {totalarray[i]/countarray[i]}")
 #Data processing end
+
+#Defenses start
+#Adversarial training Line 213
+#Smoothing Line 267
+
+#Adversarial training start
+def trainAdversarial(model, train_dataloader, val_dataloader, adversarials, loss_function, optimizer, train_steps, val_steps, history):
+    model.train()
+    total_train_loss = 0
+    total_val_loss = 0
+    total_train_correct = 0
+    total_val_correct = 0
+    for (X, y) in adversarials:
+        optimizer.zero_grad()
+        pred = model(X)
+        loss = loss_function(pred, y)
+        loss.backward()
+        optimizer.step()
+        total_train_loss += loss
+        total_train_correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+    for (X, y) in train_dataloader:
+        optimizer.zero_grad()
+        pred = model(X)
+        loss = loss_function(pred, y)
+        loss.backward()
+        optimizer.step()
+        total_train_loss += loss
+        total_train_correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+    with torch.no_grad():
+        model.eval()
+        for (X, y) in val_dataloader:
+            (X, y) = (X.to(device), y.to(device))
+            pred = model(X)
+            loss = loss_function(pred, y)
+            total_val_loss += loss
+            total_val_correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+    avg_train_loss = total_train_loss / train_steps
+    avg_val_loss = total_val_loss / val_steps
+    train_correct = total_train_correct / len(train_dataloader.dataset)
+    val_correct = total_val_correct / len(val_dataloader.dataset)
+    history["train_loss"].append(avg_train_loss.cpu().detach().numpy())
+    history["train_acc"].append(train_correct)
+    history["val_loss"].append(avg_val_loss.cpu().detach().numpy())
+    history["val_acc"].append(val_correct)
+    return history
+deepFoolDataset = []
+for (X,y) in pertDataset:
+  aBatchOfImages = []
+  for a in X:
+    aBatchOfImages.append(a.squeeze()[None, None ,:])
+  batch = torch.cat(aBatchOfImages)
+  deepFoolDataset.append((batch, y))
+print(deepFoolDataset[0][0].shape)
+for e in range(1):
+    print(f"Epoch {e+1}")
+    print(trainAdversarial(model, train_dataloader, val_dataloader, deepFoolDataset, loss_function, optimizer, train_steps, val_steps, history))
+    print("-"*50)
+#Adversarial training end
+
+#smoothing start
+from scipy.ndimage import gaussian_filter
+blurryImages = []
+for (batchOfImages, y) in deepFoolDataset:
+  #print(batchOfImages.shape)
+  for image in batchOfImages:
+    blurryImages.append(gaussian_filter(image, sigma=0.8))
+
+#get labels
+anOrigLabels = []
+anOrigImages = []
+for (X,y) in deepFoolDataset:
+  for label in y:
+    anOrigLabels.append(label)
+for batch in originalImageArray:
+  for image in batch:
+    anOrigImages.append(image.squeeze())
+
+total = 0
+correct = 0
+for i in range(len(blurryImages)):
+  if model(torch.tensor(blurryImages[i][None,:])).argmax(dim=1)[0] == anOrigLabels[i]:
+    correct = correct + 1
+  total = total + 1
+for i in range(len(blurryImages)):
+  if i == 0:
+    break
+  fig = plt.figure(figsize=(10, 7))
+  fig.add_subplot(1, 3, 1)
+  plt.imshow(anOrigImages[i], cmap='gray')
+  plt.title(f"Original Image\nLabel: {anOrigLabels[i]}")
+  plt.axis("off")
+  fig.add_subplot(1, 3, 2)
+  plt.imshow(deepFoolDataset[int(i/64)][0][i%64][0], cmap='gray')
+  plt.title(f"Attacked Image\nLabel: {model(deepFoolDataset[int(i/64)][0][i%64][None,:]).argmax(dim=1)[0]}")
+  plt.axis("off")
+  fig.add_subplot(1, 3, 3)
+  plt.imshow(blurryImages[i].squeeze(), cmap='gray')
+  plt.title(f"Smoothed Image\nLabel: {model(torch.tensor(blurryImages[i][None,:])).argmax(dim=1)[0]}")
+  plt.axis("off")
+  plt.show()
+print(f"The total number of images is {total}")
+print(f"The number of blurred images predicted correctly is {correct}")
+print(f"This is a rate of {correct/total}")
+#Smoothing end
+#Defense end
