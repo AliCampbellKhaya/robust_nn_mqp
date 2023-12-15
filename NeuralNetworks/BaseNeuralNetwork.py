@@ -200,11 +200,14 @@ class BaseNeuralNetwork(nn.Module):
             preds.extend(pred.argmax(axis=1).cpu().numpy())
             preds_true.extend(labels.cpu().numpy())
 
+            if len(examples) < 5:
+                examples.append( (pred, inputs.squeeze().detach().cpu()) )
+
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
 
         # Preds are the array of probability percentage
-        return cr, preds
+        return cr, preds, examples
     
     def test_attack_model(self, loss_function, attack):
         self.eval()
@@ -213,6 +216,7 @@ class BaseNeuralNetwork(nn.Module):
         total_test_correct = 0
         preds = []
         preds_true = []
+        examples = []
 
         for (inputs, labels) in self.test_dataloader:
             (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
@@ -234,11 +238,14 @@ class BaseNeuralNetwork(nn.Module):
             preds.extend(attack_pred.argmax(axis=1).cpu().numpy())
             preds_true.extend(labels.cpu().numpy())
 
+            if len(examples) < 5:
+                examples.append( (init_pred, attack_pred, inputs.squeeze().detach().cpu()) )
+
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
 
         # Preds are the array of probability percentage
-        return cr, preds
+        return cr, preds, examples
     
     def test_defense_model(self, loss_function, attack, defense):
         self.eval()
@@ -247,6 +254,7 @@ class BaseNeuralNetwork(nn.Module):
         total_test_correct = 0
         preds = []
         preds_true = []
+        examples = []
 
         for (inputs, labels) in self.test_dataloader:
             (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
@@ -270,6 +278,9 @@ class BaseNeuralNetwork(nn.Module):
             preds.extend(attack_pred.argmax(axis=1).cpu().numpy())
             preds_true.extend(labels.cpu().numpy())
 
+            if len(examples) < 5:
+                examples.append( (init_pred, attack_pred, inputs.squeeze().detach().cpu()) )
+
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
 
@@ -289,7 +300,23 @@ class BaseNeuralNetwork(nn.Module):
             plt.yticks([], [])
             preds, img = examples[i]
             plt.title(f"{preds.argmax(1)[0]}")
-            plt.imshow(img[0,:,:], cmap="gray")
+            #plt.imshow(img[0,:,:], cmap="gray")
+            plt.imshow(img[0,:,:].permute(1, 2, 0))
+        plt.tight_layout()
+        plt.show()
+
+    def display_attacked_images(self, examples):
+        cnt = 0
+        plt.figure(figsize=(8,10))
+        for i in range(len(examples)):
+            cnt += 1
+            plt.subplot(1, 5, cnt)
+            plt.xticks([], [])
+            plt.yticks([], [])
+            init_preds, attack_preds, img = examples[i]
+            plt.title(f"{(init_preds.argmax(1)[0])} -> {(attack_preds.argmax(1)[0])}")
+            #plt.imshow(img[0,:,:], cmap="gray")
+            plt.imshow(img[0,:,:].permute(1, 2, 0))
         plt.tight_layout()
         plt.show()
     

@@ -28,4 +28,5 @@ class GradientMasking(BaseDefense):
         masked_input = input.detach() + input_grad_masked
         masked_input.requires_grad_(True)
 
-        return torch.from_numpy(masked_input).float()
+        #return torch.from_numpy(masked_input).float()
+        return torch.tensor(masked_input)
