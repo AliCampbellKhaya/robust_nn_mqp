@@ -260,7 +260,8 @@ class BaseNeuralNetwork(nn.Module):
             input_attack = attack.forward(inputs, labels)
             input_defense = defense.forward(input_attack, labels)
 
-            attack_pred = self(torch.from_numpy(input_defense).float())
+            #attack_pred = self(torch.from_numpy(input_defense).float())
+            attack_pred = self(input_defense)
             attack_loss = loss_function(attack_pred, labels)
 
             total_test_loss += attack_loss

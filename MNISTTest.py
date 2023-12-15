@@ -10,6 +10,7 @@ from Attacks.LGV import LGV
 from Attacks.Pixle import Pixle
 
 from Defenses.FeatureSqueezing import FeatureSqueezing
+from Defenses.GradientMasking import GradientMasking
 
 device = torch.device("cpu")
 model = MNISTNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
@@ -48,6 +49,13 @@ ifgsm_attack = IFGSM(model, device, False, loss_function, optimizer, 0.1, 20)
 fs_defense = FeatureSqueezing(model)
 # print(model.train_model_defence(loss_function, optimizer, ifgsm_attack, fs_defense))
 cr, preds = model.test_defense_model(loss_function, ifgsm_attack, fs_defense)
+
+gm_defense = GradientMasking(model, loss_function, 0.2)
+
+cr, preds = model.test_defense_model(loss_function, ifgsm_attack, gm_defense)
+
+print(model.train_model_defence(loss_function, optimizer, ifgsm_attack, gm_defense))
+cr, preds = model.test_defense_model(loss_function, ifgsm_attack, gm_defense)
 
 # cw_attack = CW(model, device, False, 0.1, 0, 20, loss_function, optimizer)
 # cr, preds = model.test_attack_model(loss_function, cw_attack)
