@@ -9,7 +9,10 @@ There are 3 main components of this project:
 
 The authors of this project also wrote a paper describing the work. \
 Estimated completion time of paper: March 2024 \
-Link to paper will be provided once it is completed
+Link to paper will be provided once it is completed \
+
+#### Repository currently incomplete, will be finished after completion of the paper
+Repository is updated semi infrequently during project work
 
 ## Neural Networks
 
