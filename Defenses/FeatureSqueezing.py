@@ -4,6 +4,10 @@
 #originalLabelArray is a list of "Tensor with shape torch.Size([])" with length equal to the number of attacked images
 #attackedImages is a list with length equal to the number of attacked batches.  This list contains lists with length equal to batch size containing tensors with size [channels, width, height]
 
+"""
+TODO: Update defense and see wtf is going on here
+"""
+
 from Defenses.BaseDefense import BaseDefense
 from scipy.ndimage import gaussian_filter
 import torch

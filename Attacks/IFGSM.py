@@ -1,6 +1,10 @@
 import torch
 from Attacks.BaseAttack import BaseAttack
 
+"""
+TODO: Write comment explaining attack
+"""
+
 class IFGSM(BaseAttack):
     def __init__(self, model, device, targeted, loss_function, optimizer, eps, max_steps):
         super(IFGSM, self).__init__("IFGSM", model, device, targeted, loss_function, optimizer)

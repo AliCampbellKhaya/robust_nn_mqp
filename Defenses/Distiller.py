@@ -1,5 +1,10 @@
 import torch
 
+"""
+TODO: Write Defense
+TODO: convert from chatty bullshit into actual code
+"""
+
 class Distiller():
     def __init__(self, student, teacher):
         self.teacher = teacher

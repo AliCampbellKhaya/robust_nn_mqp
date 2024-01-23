@@ -1,5 +1,9 @@
 import torch
 
+"""
+TODO: Write/Update Base Defense
+"""
+
 class BaseDefense():
     def __init__(self, name, model):
         self.defense = name

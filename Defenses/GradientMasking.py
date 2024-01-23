@@ -3,6 +3,10 @@ import torch
 from Defenses.BaseDefense import BaseDefense
 from scipy.ndimage import gaussian_filter
 
+"""
+TODO: Write Defense / Update defense and see what the hell is going on here
+"""
+
 class GradientMasking(BaseDefense):
     def __init__(self, model, loss_function, epsilon):
         super(GradientMasking, self).__init__("GM", model)
