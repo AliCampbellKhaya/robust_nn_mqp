@@ -37,7 +37,7 @@ model.display_images(examples)
 
 # fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 0.4)
 # cr, preds = model.test_attack_model(loss_function, fgsm_attack)
-# print(cr)
+# print(cr)[p]
 
 # fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 1)
 # cr, preds = model.test_attack_model(loss_function, fgsm_attack)

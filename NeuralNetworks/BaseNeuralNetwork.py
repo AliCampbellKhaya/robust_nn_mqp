@@ -285,7 +285,7 @@ class BaseNeuralNetwork(nn.Module):
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
 
         # Preds are the array of probability percentage
-        return cr, preds
+        return cr, preds, examples
     
     def generate_example_images(self):
         pass
