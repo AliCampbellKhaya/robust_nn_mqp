@@ -1,6 +1,6 @@
 # Enhancing the Robustness of Deep Neural Networks
 Repository for work on Robust Neural Networks MQP \
-Authors: Alasdair Campbell and Jared Lasalle
+Authors: Alasdair Campbell and Jared Lassalle
 
 There are 3 main components of this project:
 * [The Neural Network Architecture](#Neural-Networks)
@@ -114,4 +114,4 @@ TODO: Short Explanation of defense \
 TODO: Results of defense
 
 ## Credit
-All work contained in this repository is exclusively the intellectual property of Alasdair Campbell and Jared Laselle
+All work contained in this repository is exclusively the intellectual property of Alasdair Campbell and Jared Lasselle
