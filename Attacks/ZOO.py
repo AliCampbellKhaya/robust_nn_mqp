@@ -3,7 +3,7 @@ from Attacks.BaseAttack import BaseAttack
 
 """
 TODO: Write comment explaining attack
-TODO: Move Pixle into here
+TODO: Write attack
 """
 
 class Pixle(BaseAttack):

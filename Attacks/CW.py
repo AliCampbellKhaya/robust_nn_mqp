@@ -1,6 +1,10 @@
 import torch
 from Attacks.BaseAttack import BaseAttack
 
+"""
+TODO: Write comment explaining attack
+"""
+
 class CW(BaseAttack):
     def __init__(self, model, device, targeted, c, confidence, max_steps, loss_function, optimizer):
         super(CW, self).__init__("CW", model, device, targeted, loss_function, optimizer)

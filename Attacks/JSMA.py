@@ -1,8 +1,11 @@
 import torch
 from Attacks.BaseAttack import BaseAttack
 
-# Is an idea for an attack, may not get implemented
+"""
+TODO: Write comment explaining attack
+TODO: Write attack
+"""
 
 class JSMA(BaseAttack):
     def __init__(self, model, device, targeted):
-        super(JSMA, self).__init__("LGV", model, device, targeted)
+        super(JSMA, self).__init__("JSMA", model, device, targeted)

@@ -1,6 +1,11 @@
 import torch
 from Attacks.BaseAttack import BaseAttack
 
+"""
+TODO: Write comment explaining attack
+TODO: Look into why results changed when refactored into class
+"""
+
 class FGSM(BaseAttack):
     def __init__(self, model, device, targeted, loss_function, optimizer, eps):
         super(FGSM, self).__init__("FGSM", model, device, targeted, loss_function, optimizer)
