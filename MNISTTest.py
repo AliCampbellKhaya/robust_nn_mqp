@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+import time
+
 from NeuralNetworks.MNISTNeuralNetwork import MNISTNeuralNetwork
 from Attacks.FGSM import FGSM
 from Attacks.CW import CW
@@ -12,7 +14,9 @@ from Attacks.Pixle import Pixle
 from Defenses.FeatureSqueezing import FeatureSqueezing
 from Defenses.GradientMasking import GradientMasking
 
-device = torch.device("cpu")
+print("Test for MNIST")
+
+device = torch.device("cuda")
 model = MNISTNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
 
 # Between 1e-3 and 1e-5
@@ -23,31 +27,44 @@ optimizer = torch.optim.Adam(model.parameters(), learning_rate)
 
 model.load_model()
 
+print("Initial results for trained MNIST neural network")
+start = time.time()
 cr, preds, examples = model.test_model(loss_function)
 print(cr)
+end = time.time()
+print(f"Time to test MNIST neural network: {end-start}")
 model.display_images(examples)
 
-# fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 0.01)
-# cr, preds = model.test_attack_model(loss_function, fgsm_attack)
-# print(cr)
+print("FGSM Attack Results")
+start = time.time()
+fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 0.2)
+cr, preds, examples = model.test_attack_model(loss_function, fgsm_attack)
+print(cr)
+end = time.time()
+print(f"Time to test FGSM attack on MNIST neural network: {end-start}")
+model.display_attacked_images(examples)
 
-# fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 0.2)
-# cr, preds = model.test_attack_model(loss_function, fgsm_attack)
-# print(cr)
-
-# fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 0.4)
-# cr, preds = model.test_attack_model(loss_function, fgsm_attack)
-# print(cr)[p]
-
-# fgsm_attack = FGSM(model, device, False, loss_function, optimizer, 1)
-# cr, preds = model.test_attack_model(loss_function, fgsm_attack)
-# print(cr)
-
+print("IFGSM Attack Results")
+start = time.time()
 ifgsm_attack = IFGSM(model, device, False, loss_function, optimizer, 0.1, 20)
 cr, preds, examples = model.test_attack_model(loss_function, ifgsm_attack)
-model.display_attacked_images(examples)
 print(cr)
+end = time.time()
+print(f"Time to test IFGSM attack on MNIST neural network: {end-start}")
+model.display_attacked_images(examples)
 
+print("CW Attack Results")
+start = time.time()
+cw_attack = CW(model, device, False, 0.1, 0, 20, loss_function, optimizer)
+cr, preds, examples = model.test_attack_model(loss_function, cw_attack)
+print(cr)
+end = time.time()
+print(f"Time to test CW attack on MNIST neural network: {end-start}")
+model.display_attacked_images(examples)
+
+print("Deepfool Attack Results")
+start = time.time()
+deepfool_attack = DeepFool()
 # fs_defense = FeatureSqueezing(model)
 # # print(model.train_model_defence(loss_function, optimizer, ifgsm_attack, fs_defense))
 # cr, preds, examples = model.test_defense_model(loss_function, ifgsm_attack, fs_defense)

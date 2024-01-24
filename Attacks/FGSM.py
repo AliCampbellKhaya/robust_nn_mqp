@@ -43,5 +43,7 @@ class FGSM(BaseAttack):
         perturbed_input = input + self.eps * sign_data_grad
         perturbed_input = torch.clamp(perturbed_input, 0, 1)
 
+        print(f"Attacked Label: {self.model(perturbed_input)}, Actual Label: {label}")
+
         return perturbed_input
     
