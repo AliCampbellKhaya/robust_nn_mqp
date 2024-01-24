@@ -304,6 +304,7 @@ class BaseNeuralNetwork(nn.Module):
             plt.imshow(img[0,:,:].permute(1, 2, 0))
         plt.tight_layout()
         plt.show()
+        
 
     def display_attacked_images(self, examples):
         cnt = 0
