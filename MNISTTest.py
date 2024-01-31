@@ -8,7 +8,7 @@ from Attacks.FGSM import FGSM
 from Attacks.CW import CW
 from Attacks.DeepFool import DeepFool
 from Attacks.IFGSM import IFGSM
-from Attacks.LGV import LGV
+from Attacks.JSMA import JSMA
 from Attacks.Pixle import Pixle
 
 from Defenses.FeatureSqueezing import FeatureSqueezing
@@ -62,9 +62,35 @@ end = time.time()
 print(f"Time to test CW attack on MNIST neural network: {end-start}")
 model.display_attacked_images(examples)
 
+print("JSMA Attack Results")
+start = time.time()
+jsma_attack = JSMA(model, device, False, 1, 1, 1000)
+cr, preds, examples = model.test_attack_model(loss_function, jsma_attack)
+print(cr)
+end = time.time()
+print(f"Time to test JSMA attack on MNIST neural network: {end-start}")
+model.display_attacked_images(examples)
+
 print("Deepfool Attack Results")
 start = time.time()
-deepfool_attack = DeepFool()
+deepfool_attack = DeepFool(model, device, False, 0.02, 1000)
+cr, preds, examples = model.test_attack_model(loss_function, deepfool_attack)
+print(cr)
+end = time.timee()
+print(f"Time to test DeepFool on Mnist neural network: {end-start}")
+model.display_attacked_images(examples)
+
+print("Pixle Attack Results")
+start = time.time()
+pixle_attack = Pixle(model, device, False, 0)
+cr, preds, examples = model.test_attack_model(loss_function, pixle_attack)
+print(cr)
+end = time.time()
+print(f"Time to test Pixle attack on MNIST neural network: {end-start}")
+model.display_attacked_images(examples)
+
+
+
 # fs_defense = FeatureSqueezing(model)
 # # print(model.train_model_defence(loss_function, optimizer, ifgsm_attack, fs_defense))
 # cr, preds, examples = model.test_defense_model(loss_function, ifgsm_attack, fs_defense)
