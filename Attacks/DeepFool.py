@@ -64,8 +64,8 @@ class DeepFool(BaseAttack):
 
       total_pert = (1 + step) * total_pert
 
-      return total_pert, iLoops, label, attack_label, pert_image
-
+      #return total_pert, iLoops, label, attack_label, pert_image
+      return pert_image
 
 
     def omit_softmax(self, input):
