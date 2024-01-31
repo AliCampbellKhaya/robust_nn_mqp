@@ -19,6 +19,7 @@ class BaseNeuralNetwork(nn.Module):
         self.test_dataloader = test_dataloader
         self.test_data = test_data
         self.num_channels = num_channels
+        self.num_classes = num_out_features
 
         self.history = {
             "train_loss": [],
