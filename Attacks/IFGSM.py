@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from Attacks.BaseAttack import BaseAttack
 
 """
@@ -11,17 +12,26 @@ class IFGSM(BaseAttack):
         self.eps = eps
         self.max_steps = max_steps
 
-    def forward(self, input, label):
-        input = input.clone().detach().to(self.device)
-        label = label.clone().detach().to(self.device)
+    def forward_individual(self, input, label):
+        label = label.unsqueeze(0)
+
+        shape = input.cpu().numpy().shape
+        steps = 0
+        pert_image = input.detach().clone()
+        x = pert_image[None, :].requires_grad_(True)
+        
+        total_pert = torch.zeros(shape).to(self.device)
+        #total_pert = np.zeros(shape)
 
         if self.targeted:
             target_label = self.get_target_label()
 
-        input.requires_grad = True
+            
+        attack_label = label.cpu().numpy().item()
 
-        for steps in range(self.max_steps):
-            init_pred = self.model(input)
+        while attack_label == label.cpu().numpy().item() and steps < self.max_steps:
+
+            init_pred = self.model(x)
 
             if self.targeted:
                 loss = -self.loss_function(init_pred, target_label)
@@ -32,20 +42,27 @@ class IFGSM(BaseAttack):
             loss.backward(retain_graph=True)
             self.optimizer.step()
 
-            # Checks to see if image is missclassified - ie attack has worked, so terminate for loop
-            #if init_pred.argmax(1)[0] != label[0]:
-            # if torch.equal(init_pred.argmax(1), label):
-            #     break
+            x_grad = x.grad.data
+            sign_data_grad = x_grad.sign()
 
-            input_grad = input.grad.data
-            sign_data_grad = input_grad.sign()
+            total_pert = total_pert + self.eps * sign_data_grad
+            pert_image = x + self.eps * sign_data_grad
+            x = torch.clamp(pert_image, 0, 1)
+            #x = pert_image
+            # total_pert = total_pert + self.eps * sign_data_grad
+            # pert_image = input + total_pert
+            # x = torch.clamp(pert_image, 0,  1)
 
-            input = input + self.eps * sign_data_grad
-            input = torch.clamp(input, 0, 1)
 
-            input.requires_grad_(True).retain_grad()
+            x.requires_grad_(True).retain_grad()
 
-            #print(f"Attacked Label: {self.model(input)}, Actual Label: {label}")
+            attack_pred = self.model(x)
+            attack_label = attack_pred.argmax(axis=1).cpu().numpy().item()
 
-        return input
+            steps += 1
+            # print(steps)
+
+        print(attack_label, label.cpu().numpy().item())
+
+        return x, label.cpu().numpy().item(), attack_label, steps, total_pert
     

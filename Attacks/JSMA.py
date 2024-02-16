@@ -10,16 +10,17 @@ TODO: Write attack
 """
 
 class JSMA(BaseAttack):
-    def __init__(self, model, device, targeted, max_perturb, perturb_length, max_steps):
-        super(JSMA, self).__init__("JSMA", model, device, targeted)
+    def __init__(self, model, device, targeted, max_perturb, perturb_length, max_steps, loss_function, optimizer):
+        super(JSMA, self).__init__("JSMA", model, device, targeted, loss_function, optimizer)
         self.max_perturb = max_perturb
         self.perturb_length = perturb_length
         self.max_steps = max_steps
 
     def forward(self, input, label):
-        input = input.clone().detach().to(self.device)
+        input = input.clone().detach().to(self.device).requires_grad_(True)
         label = label.clone().detach().to(self.device)
-        target_label = find_target_label(input, self.model(input), label)
+        perturbed_input = input.clone().detach().requires_grad_(True)
+        target_label = self.find_target_label(input, self.model(input).detach(), label)
 
         for _ in self.max_steps:
             jsm = self.saliency_map(input)
@@ -52,22 +53,23 @@ class JSMA(BaseAttack):
 
         return map.squeeze()
     
-    def calculate_label_distance(embedding1, embedding2):
+    def calculate_label_distance(self, embedding1, embedding2):
          return torch.norm(embedding1 - embedding2)
     
-    def find_target_label(input, input_label_idx, labels):
+    def find_target_label(self, input, input_label_idx, labels):
          with torch.no_grad():
-              embeddings = omit_softmax(input).numpy()
+              embeddings = self.omit_softmax(input).numpy()
 
          current_embedding = embeddings[input_label_idx]
-         distances = [calculate_label_distance(current_embedding, embeddings[i]) for i in range(len(labels))]
+         distances = [self.calculate_label_distance(current_embedding, embeddings[i]) for i in range(len(labels))]
 
          nearest_label_idx = torch.argmin(torch.tensor(distances))
 
          return labels[nearest_label_idx]
     
+    # Variable(input[None, :, :, :]
     def omit_softmax(self, input):
-        fwd = self.model.conv_layer1(Variable(input[None, :, :, :], requires_grad=True))
+        fwd = self.model.conv_layer1(input)
         fwd = self.model.conv_layer2(fwd)
         fwd = fwd.view(fwd.size(0), -1)
         fwd = self.model.fc_layer(fwd)

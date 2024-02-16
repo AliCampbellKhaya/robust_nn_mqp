@@ -1,7 +1,5 @@
 import torch
 import numpy as np
-from torch.autograd import Variable
-import copy
 
 from Attacks.BaseAttack import BaseAttack
 
@@ -11,25 +9,25 @@ TODO: Move Pixle into here
 """
 
 class Pixle(BaseAttack):
-    def __init__(self, model, device, targeted, attack_type):
-        super().__init__("Pixle", model, device, targeted)
+    def __init__(self, model, device, targeted, attack_type, loss_function, optimizer):
+        super().__init__("Pixle", model, device, targeted, loss_function, optimizer)
         self.attack_type = attack_type
 
-    def forward(self, input, labels):
+    def forward_individual(self, input, label):
 
         if self.attack_type == 0:
-            return forward_basic(input, labels)
+            return self.forward_basic(input, label)
         
         elif self.attack_type == 1:
-            return forward_random_rows(input, labels)
+            return self.forward_random_rows(input, label)
         
         elif self.attack_type == 2:
-            return forward_random()
+            return self.forward_random()
         
         else:
             print("Please enter valid attack type (0-2)")
 
-    def forward_basic(self, input, labels):
+    def forward_basic(self, input, label):
         flat_img = input.view(-1)
 
         indexes = []
@@ -53,16 +51,20 @@ class Pixle(BaseAttack):
             counter += 1
 
         attack_img = attack_img.view(input.size())
-        return attack_img
+
+        attack_pred = self.model(attack_img)
+        attack_label = attack_pred.argmax(axis=1).cpu().numpy().item()
+
+        return attack_img, label.cpu().numpy().item, attack_label, 0, torch.zeros(attack_img.cpu().numpy().shape)
     
-    def forward_random_rows(self, input, labels, start_row, end_row):
+    def forward_random_rows(self, input, label, start_row, end_row):
         section = input[:, start_row:end_row, :].view(-1)
         indexes = torch.randperm(section.size(0))
         shuffled = section[indexes]
         input[:, start_row:end_row, :] = shuffled.view(input[:, start_row:end_row, :].size())
         return input
     
-    def forward_random(self, input, labels):
+    def forward_random(self, input, label):
         flat_image = input.view(-1)
         indexes = torch.randperm(flat_image.size(0))
         attack_image = flat_image[indexes]

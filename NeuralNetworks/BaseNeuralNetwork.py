@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 
+from torch.utils.data import DataLoader
+
 class BaseNeuralNetwork(nn.Module):
     def __init__(self, dataset_name, device, num_channels, num_features, num_out_features, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data):
         super(BaseNeuralNetwork, self).__init__()
@@ -68,6 +70,17 @@ class BaseNeuralNetwork(nn.Module):
 
         return F.log_softmax(x, dim=1)
     
+    def forward_omit_softmax(self, x):
+        x = self.conv_layer1(x)
+
+        x = self.conv_layer2(x)
+
+        x = x.view(x.size(0), -1)
+
+        x = self.fc_layer(x)
+
+        return x
+    
     def train_model(self, loss_function, optimizer):
         self.train()
 
@@ -118,7 +131,6 @@ class BaseNeuralNetwork(nn.Module):
         if avg_val_loss.cpu().detach().numpy() <= min(self.history["val_loss"]):
             self.save_model()
 
-        # Do I need to return the history??
         return self.history
     
     def train_model_defence(self, loss_function, optimizer, attack, defense):
@@ -219,6 +231,14 @@ class BaseNeuralNetwork(nn.Module):
         preds_true = []
         examples = []
 
+        results = {
+            "pert_image": [],
+            "final_label": [],
+            "attack_label": [],
+            "iterations": [],
+            "perturbations": []
+        }
+
         for (inputs, labels) in self.test_dataloader:
             (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
 
@@ -228,9 +248,9 @@ class BaseNeuralNetwork(nn.Module):
             self.zero_grad()
             init_loss.backward()
 
-            input_attack = attack.forward(inputs, labels)
+            input_attack_results = attack.forward(inputs, labels)
 
-            attack_pred = self(input_attack)
+            attack_pred = self(input_attack_results[0])
             attack_loss = loss_function(attack_pred, labels)
 
             total_test_loss += attack_loss
@@ -239,14 +259,28 @@ class BaseNeuralNetwork(nn.Module):
             preds.extend(attack_pred.argmax(axis=1).cpu().numpy())
             preds_true.extend(labels.cpu().numpy())
 
+            results["pert_image"] += input_attack_results[1]["pert_image"]
+            results["final_label"] += input_attack_results[1]["final_label"]
+            results["attack_label"] += input_attack_results[1]["attack_label"]
+            results["iterations"] += input_attack_results[1]["iterations"]
+            results["perturbations"] += input_attack_results[1]["perturbations"]
+
+            # print(preds)
+            # print(results["attack_label"])
+            # print(preds_true)
+            # print(results["final_label"])
+
             if len(examples) < 5:
                 examples.append( (init_pred, attack_pred, inputs.squeeze().detach().cpu()) )
 
+            #break
+
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
+        #cr = classification_report(results["final_label"], results["attack_label"])
 
         # Preds are the array of probability percentage
-        return cr, preds, examples
+        return cr, preds, examples, results
     
     def test_defense_model(self, loss_function, attack, defense):
         self.eval()
@@ -305,7 +339,7 @@ class BaseNeuralNetwork(nn.Module):
             plt.imshow(img[0,:,:].permute(1, 2, 0))
         plt.tight_layout()
         plt.show()
-        
+
 
     def display_attacked_images(self, examples):
         cnt = 0

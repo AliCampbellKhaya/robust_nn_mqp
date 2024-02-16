@@ -1,7 +1,5 @@
 import torch
-import copy
 import numpy as np
-from torch.autograd import Variable
 
 from Attacks.BaseAttack import BaseAttack
 
@@ -11,69 +9,74 @@ TODO: Move DeepFool into here
 """
 
 class DeepFool(BaseAttack):
-    def __init__(self, model, device, targeted, step, maxIter):
-        super().__init__("DeepFool", model, device, targeted)
+    def __init__(self, model, device, targeted, step, maxIter, loss_function, optimizer):
+        super().__init__("DeepFool", model, device, targeted, loss_function, optimizer)
         self.step = step
         self.maxIter = maxIter
 
-    def forward(self, input, label):
-      fwd = omit_softmax(input)
-      fwd_img = fwd.data.cpu().numpy().flatten()
 
-      classes_indexes = (np.array(fwd_img)).flatten().argsort()[::-1]
-      classes_indexes = classes_indexes[0:self.model.num_classes]
-      label = classes_indexes[0]
-      shape = input.cpu().numpy().shape
-      pert_image = copy.deepcopy(input)
-      direction = np.zeros(shape)
-      total_pert = np.zeros(shape)
-      iLoops = 0
-      x = Variable(pert_image[None, :], requires_grad=True)
+    def forward_individual(self, input, labels):
+        #print(input.shape)
 
-      logits = omit_softmax(x)
+        x_0 = input[None, :, :, :].requires_grad_(True)
 
-      preds = [logits[0, classes_indexes[k]] for k in range(self.model.num_classes)]
-      attack_label = label
-      while attack_label == label and iLoops < self.maxIter:
-        min_pert = np.inf
-        logits[0, classes_indexes[0]].backward(retain_graph=True)
-        old_grad = x.grad.data.cpu().numpy().copy()
+        fwd = self.model.forward_omit_softmax(x_0)
+        fwd_img = fwd.data.cpu().numpy().flatten()
 
-        for k in range(i, self.model.num_classes):
-          x.grad = None
-          logits[0, classes_indexes[k]].backward(retain_graph=True)
-          new_grad = x.grad.data.cpu().numpy().copy()
+        classes_indexes = fwd_img.flatten().argsort()[::-1]
+        # print(classes_indexes)
+        classes_indexes = classes_indexes[0:self.model.num_classes]
+        # print(classes_indexes)
 
-          pert_direction = new_grad - old_grad
-          distance = (logits[0, classes_indexes[k]] - logits[0, classes_indexes[0]]).data.cpu().numpy()
-          pert_class = abs(distance)/np.linalg.norm(pert_direction.flatten())
+        label = classes_indexes[0]
+        shape = input.cpu().numpy().shape
+        #pert_image = copy.deepcopy(input)
+        pert_image = input.detach().clone()
+        direction = np.zeros(shape)
+        total_pert = np.zeros(shape)
+        iLoops = 0
+        #x = pert_image[None, :].requires_grad=True
+        x = pert_image[None, :].requires_grad_(True)
+        #Variable(pert_image[None, :], requires_grad=True)
 
-          if pert_class < min_pert:
-            min_pert = pert_class
-            direction = pert_direction
-        
-        pert_ILoop = (min_pert+1e-4) * direction / np.linalg.norm(direction)
-        total_pert = np.float32(total_pert + pert_ILoop)
-        pert_image = input + (1 + step) * torch.from_numpy(total_pert)
-        x = Variable(pert_image, requires_grad=True)
-
-        logits = omit_softmax(x)
-
-        attack_label = np.argmax(logits.data.cpu().numpy().flatten())
-        iLoops += 1
-
-      total_pert = (1 + step) * total_pert
-
-      #return total_pert, iLoops, label, attack_label, pert_image
-      return pert_image
+        logits = self.model.forward_omit_softmax(x)
 
 
-    def omit_softmax(self, input):
-        fwd = self.model.conv_layer1(Variable(input[None, :, :, :], requires_grad=True))
-        fwd = self.model.conv_layer2(fwd)
-        fwd = fwd.view(fwd.size(0), -1)
-        fwd = self.model.fc_layer(fwd)
+        preds = [logits[0, classes_indexes[k]] for k in range(self.model.num_classes)]
+        attack_label = label
+        while attack_label == label and iLoops < self.maxIter:
+          min_pert = np.inf
+          logits[0, classes_indexes[0]].backward(retain_graph=True)
+          old_grad = x.grad.data.cpu().numpy().copy()
 
-        return fwd
+          for k in range(1, self.model.num_classes):
+            x.grad = None
+            logits[0, classes_indexes[k]].backward(retain_graph=True)
+            new_grad = x.grad.data.cpu().numpy().copy()
 
+            pert_direction = new_grad - old_grad
+            distance = (logits[0, classes_indexes[k]] - logits[0, classes_indexes[0]]).data.cpu().numpy()
+            pert_class = abs(distance)/np.linalg.norm(pert_direction.flatten())
+
+            if pert_class < min_pert:
+              min_pert = pert_class
+              direction = pert_direction
+          
+          pert_ILoop = (min_pert+1e-4) * direction / np.linalg.norm(direction)
+          total_pert = np.float32(total_pert + pert_ILoop)
+          pert_image = input + (1 + self.step) * torch.from_numpy(total_pert)
+          x = pert_image.requires_grad_(True) 
+          # Variable(pert_image, requires_grad=True)
+
+          logits = self.model.forward_omit_softmax(x)
+
+          attack_label = np.argmax(logits.data.cpu().numpy().flatten())
+          iLoops += 1
+
+        total_pert = (1 + self.step) * total_pert
+
+        #return total_pert, iLoops, label, attack_label, pert_image
+        #return pert_image
+
+        return pert_image, label, attack_label, iLoops, total_pert
 

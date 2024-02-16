@@ -1,4 +1,5 @@
 import torch
+import itertools as it
 
 class BaseAttack():
     def __init__(self, name, model, device, targeted, loss_function, optimizer):
@@ -10,8 +11,10 @@ class BaseAttack():
         self.optimizer = optimizer
 
     def forward(self, input, labels=None):
-        """Should be overwritten by every subclass"""
-        raise NotImplementedError
+        input = input.clone().detach().to(self.device)
+        labels = labels.clone().detach().to(self.device)
+        results = self.batch_unloader(input, labels)
+        return results
 
     def normalize(self, input, mean=[0.1307], std=[0.3081]):
         mean = torch.tensor(mean).to(self.device).reshape(1, self.model.num_channels, 1, 1)
@@ -22,6 +25,33 @@ class BaseAttack():
         mean = torch.tensor(mean).to(self.device).reshape(1, self.model.num_channels, 1, 1)
         std = torch.tensor(std).to(self.device).reshape(1, self.model.num_channels, 1, 1)
         return (input * std) + mean
+    
+    def batch_unloader(self, input, labels):
+        results = {
+            "pert_image": [],
+            "final_label": [],
+            "attack_label": [],
+            "iterations": [],
+            "perturbations": []
+        }
+        pert_image_batch = []
+        for image, label in zip(input, labels):
+            pert_image, final_label, attack_label, iterations, pert = self.forward_individual(image, label)
+            results["pert_image"].append(pert_image)
+            results["final_label"].append(final_label)
+            results["attack_label"].append(attack_label)
+            results["iterations"].append(iterations)
+            results["perturbations"].append(pert)
+            pert_image_batch.append(pert_image)
+
+        results2 = [torch.stack(pert_image_batch).flatten(start_dim=1, end_dim=2), results]
+        
+        return results2
+
+    def forward_individual(self, input, label):
+        """Should be overwritten by every subclass"""
+        raise NotImplementedError
+
     
     # Update Targeted for Increased Customization
     
