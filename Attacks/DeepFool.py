@@ -78,5 +78,5 @@ class DeepFool(BaseAttack):
         #return total_pert, iLoops, label, attack_label, pert_image
         #return pert_image
 
-        return pert_image, label, attack_label, iLoops, total_pert
+        return pert_image, labels.cpu().numpy().item(), attack_label, iLoops, total_pert
 

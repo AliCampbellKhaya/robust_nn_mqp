@@ -28,7 +28,11 @@ class Pixle(BaseAttack):
             print("Please enter valid attack type (0-2)")
 
     def forward_basic(self, input, label):
-        flat_img = input.view(-1)
+        label = label.unsqueeze(0)
+        pert_image = input.detach().clone()
+        x = pert_image[None, :]
+
+        flat_img = x.view(-1)
 
         indexes = []
         counter = 0
@@ -50,12 +54,12 @@ class Pixle(BaseAttack):
             attack_img[counter-1] = indexes[counter-1][0]
             counter += 1
 
-        attack_img = attack_img.view(input.size())
+        attack_img = attack_img.view(x.size())
 
         attack_pred = self.model(attack_img)
         attack_label = attack_pred.argmax(axis=1).cpu().numpy().item()
 
-        return attack_img, label.cpu().numpy().item, attack_label, 0, torch.zeros(attack_img.cpu().numpy().shape)
+        return attack_img, label.cpu().numpy().item(), attack_label, 0, torch.zeros(attack_img.cpu().numpy().shape)
     
     def forward_random_rows(self, input, label, start_row, end_row):
         section = input[:, start_row:end_row, :].view(-1)

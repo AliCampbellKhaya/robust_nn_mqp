@@ -17,7 +17,8 @@ class FeatureSqueezing(BaseDefense):
         super(FeatureSqueezing, self).__init__("FS", model)
 
     def forward(self, inputs, labels):
-      inputs = gaussian_filter(inputs.detach().numpy(), sigma=0.5)
+      inputs = gaussian_filter(inputs[0].detach(), sigma=0.5)
+      #inputs = gaussian_filter(inputs.detach().numpy(), sigma=0.5)
       return torch.tensor(inputs)
 
 

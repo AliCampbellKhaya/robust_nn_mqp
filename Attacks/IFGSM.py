@@ -12,6 +12,8 @@ class IFGSM(BaseAttack):
         self.eps = eps
         self.max_steps = max_steps
 
+
+    # TODO: Why does every image converge to 4??? - fix
     def forward_individual(self, input, label):
         label = label.unsqueeze(0)
 
@@ -62,7 +64,7 @@ class IFGSM(BaseAttack):
             steps += 1
             # print(steps)
 
-        print(attack_label, label.cpu().numpy().item())
+        #print(attack_label, label.cpu().numpy().item())
 
         return x, label.cpu().numpy().item(), attack_label, steps, total_pert
     

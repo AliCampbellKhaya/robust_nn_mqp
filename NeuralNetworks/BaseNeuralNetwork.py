@@ -5,8 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 
-from torch.utils.data import DataLoader
-
 class BaseNeuralNetwork(nn.Module):
     def __init__(self, dataset_name, device, num_channels, num_features, num_out_features, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data):
         super(BaseNeuralNetwork, self).__init__()
@@ -70,6 +68,7 @@ class BaseNeuralNetwork(nn.Module):
 
         return F.log_softmax(x, dim=1)
     
+    # Same method as forward pass but returns the logits
     def forward_omit_softmax(self, x):
         x = self.conv_layer1(x)
 
@@ -133,6 +132,7 @@ class BaseNeuralNetwork(nn.Module):
 
         return self.history
     
+    # TODO: Fix
     def train_model_defence(self, loss_function, optimizer, attack, defense):
         self.train()
 
@@ -213,9 +213,11 @@ class BaseNeuralNetwork(nn.Module):
             preds.extend(pred.argmax(axis=1).cpu().numpy())
             preds_true.extend(labels.cpu().numpy())
 
+            # TODO: Fix example generator
             if len(examples) < 5:
                 examples.append( (pred, inputs.squeeze().detach().cpu()) )
 
+        # TODO: Fix classification report
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
 
@@ -273,7 +275,7 @@ class BaseNeuralNetwork(nn.Module):
             if len(examples) < 5:
                 examples.append( (init_pred, attack_pred, inputs.squeeze().detach().cpu()) )
 
-            #break
+            break
 
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =

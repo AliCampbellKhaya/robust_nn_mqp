@@ -25,6 +25,7 @@ class FGSM(BaseAttack):
         input = input.clone().detach().to(self.device)
         label = label.clone().detach().to(self.device)
 
+        # TODO: Make decision
         if self.targeted:
             target_label = self.get_target_label()
 
