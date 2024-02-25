@@ -32,16 +32,21 @@ class BaseAttack():
             "final_label": [],
             "attack_label": [],
             "iterations": [],
-            "perturbations": []
+            "perturbations": [],
+            "original_image": []
         }
         pert_image_batch = []
         for image, label in zip(input, labels):
+            # print("x before attack")
+            # print(image)
+            original_image = image.detach().clone()
             pert_image, final_label, attack_label, iterations, pert = self.forward_individual(image, label)
             results["pert_image"].append(pert_image)
             results["final_label"].append(final_label)
             results["attack_label"].append(attack_label)
             results["iterations"].append(iterations)
             results["perturbations"].append(pert)
+            results["original_image"].append(original_image)
             pert_image_batch.append(pert_image)
 
         results2 = [torch.stack(pert_image_batch).flatten(start_dim=1, end_dim=2), results]

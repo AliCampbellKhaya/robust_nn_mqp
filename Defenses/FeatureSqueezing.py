@@ -13,13 +13,13 @@ from scipy.ndimage import gaussian_filter
 import torch
 
 class FeatureSqueezing(BaseDefense):
-    def __init__(self, model):
-        super(FeatureSqueezing, self).__init__("FS", model)
+    def __init__(self, model, device):
+        super(FeatureSqueezing, self).__init__("FS", model, device)
 
-    def forward(self, inputs, labels):
-      inputs = gaussian_filter(inputs[0].detach(), sigma=0.5)
+    def forward_individual(self, input, label):
+      input = gaussian_filter(input.detach(), sigma=0.5)
       #inputs = gaussian_filter(inputs.detach().numpy(), sigma=0.5)
-      return torch.tensor(inputs)
+      return torch.tensor(input)
 
 
     

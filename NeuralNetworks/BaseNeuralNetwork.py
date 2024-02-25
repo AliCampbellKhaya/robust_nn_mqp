@@ -217,7 +217,9 @@ class BaseNeuralNetwork(nn.Module):
             if len(examples) < 5:
                 examples.append( (pred, inputs.squeeze().detach().cpu()) )
 
-        # TODO: Fix classification report
+            break
+
+        # TODO: Fix classification
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
 
@@ -238,7 +240,8 @@ class BaseNeuralNetwork(nn.Module):
             "final_label": [],
             "attack_label": [],
             "iterations": [],
-            "perturbations": []
+            "perturbations": [],
+            "original_image": []
         }
 
         for (inputs, labels) in self.test_dataloader:
@@ -256,9 +259,9 @@ class BaseNeuralNetwork(nn.Module):
             attack_loss = loss_function(attack_pred, labels)
 
             total_test_loss += attack_loss
-            total_test_correct += (attack_pred.argmax(1) == labels).type(torch.float).sum().item()
+            total_test_correct += (attack_pred.detach().argmax(1) == labels).type(torch.float).sum().item()
 
-            preds.extend(attack_pred.argmax(axis=1).cpu().numpy())
+            preds.extend(attack_pred.detach().argmax(axis=1).cpu().numpy())
             preds_true.extend(labels.cpu().numpy())
 
             results["pert_image"] += input_attack_results[1]["pert_image"]
@@ -266,12 +269,15 @@ class BaseNeuralNetwork(nn.Module):
             results["attack_label"] += input_attack_results[1]["attack_label"]
             results["iterations"] += input_attack_results[1]["iterations"]
             results["perturbations"] += input_attack_results[1]["perturbations"]
+            results["original_image"] += input_attack_results[1]["original_image"]
 
             # print(preds)
             # print(results["attack_label"])
             # print(preds_true)
             # print(results["final_label"])
 
+
+            # TODO: A better way of generating examples
             if len(examples) < 5:
                 examples.append( (init_pred, attack_pred, inputs.squeeze().detach().cpu()) )
 
@@ -303,7 +309,7 @@ class BaseNeuralNetwork(nn.Module):
             init_loss.backward()
 
             input_attack = attack.forward(inputs, labels)
-            input_defense = defense.forward(input_attack, labels)
+            input_defense = defense.forward(input_attack[0], labels)
 
             #attack_pred = self(torch.from_numpy(input_defense).float())
             attack_pred = self(input_defense)
@@ -317,6 +323,8 @@ class BaseNeuralNetwork(nn.Module):
 
             if len(examples) < 5:
                 examples.append( (init_pred, attack_pred, inputs.squeeze().detach().cpu()) )
+
+            break
 
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
