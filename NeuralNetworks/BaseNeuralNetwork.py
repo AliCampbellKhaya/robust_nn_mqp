@@ -279,7 +279,7 @@ class BaseNeuralNetwork(nn.Module):
 
             # TODO: A better way of generating examples
             if len(examples) < 5:
-                examples.append( (init_pred, attack_pred, inputs.squeeze().detach().cpu()) )
+                examples.append( (init_pred, attack_pred, input_attack_results[0].squeeze().detach().cpu()) )
 
             break
 
@@ -322,7 +322,7 @@ class BaseNeuralNetwork(nn.Module):
             preds_true.extend(labels.cpu().numpy())
 
             if len(examples) < 5:
-                examples.append( (init_pred, attack_pred, inputs.squeeze().detach().cpu()) )
+                examples.append( (init_pred, attack_pred, input_defense.squeeze().detach().cpu()) )
 
             break
 
