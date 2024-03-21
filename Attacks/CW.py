@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 """
 TODO: Write comment explaining attack
+1e10 used in place of infinity
 """
 
 class CW(BaseAttack):
@@ -16,307 +17,111 @@ class CW(BaseAttack):
         self.search_steps = search_steps
         self.max_steps = max_steps
         self.confidence = confidence
-        self.lr = lr
+        self.lr = lr  
 
     def forward_individual(self, input, label):
         x = input[None, :].requires_grad_(True)
         label = label.unsqueeze(0)
-        
+
         lower_bound_const = torch.zeros(1)
         upper_bound_const = torch.ones(1) * 1e10
         const = torch.ones(1) * 1e-3
 
-        optimal_best_l2 = torch.ones(1) * 1e10
-        optimal_best_l2_pred = -torch.ones(1)
-        optimal_best_image = x.detach().clone()
+        rows = range(len(x))
 
-        # print("x before tanh")
-        # print(x)
-        x_tanh = self.to_tanh_space(x)
-        # print("x after tanh")
-        # print(x_tanh)
+        x_tanh = self.to_tanh(x)
+        x_from_tanh = self.from_tanh(x_tanh)
 
-        # plt.subplot(1, 2, 1)
-        # plt.imshow(x_tanh.squeeze().detach().permute(1, 2, 0))
-        # plt.subplot(1, 2, 2)
-        # plt.imshow(x.squeeze().detach().permute(1, 2, 0))
-        # plt.show()
-        
-        label_one_hot = F.one_hot(label, self.model.num_classes)
-
-        pert_tanh = torch.zeros(x.size()).requires_grad_(True)
-        self.optimizer = optim.Adam([pert_tanh], lr=self.lr)
+        best_adv = torch.zeros_like(x)
+        best_adv_norm = torch.full_like(x, 1e10)
 
         for outer_step in range(self.search_steps):
-            
-            best_l2 = torch.ones(1) * 1e10
-            best_l2_pred = -torch.ones(1)
-            prev_loss = np.inf
+            if outer_step == self.search_steps - 1 and self.search_steps >= 10:
+                const = torch.minimum(upper_bound_const, 1e10)
+
+            delta = torch.zeros_like(x_tanh)
+            attack_optimizer = optim.Adam([delta], lr=self.lr)
+
+            current_adv = torch.full((1,), fill_value=False)
+            previous_loss = 1e10
+
+            #step_const = torch.tensor(x, const)
 
             for inner_step in range(self.max_steps):
-                pert_image, pert_norm, pert_output, loss = self.optimize(x_tanh, label_one_hot, pert_tanh, const)
+                loss, x_pert, x_pert_logits, model_grads = self.optimize(x_tanh, x_from_tanh, delta, const, rows, attack_optimizer)
+                delta -= model_grads
 
-                #TODO: Early abort
-                # print("pert_image")
-                # print(type(pert_image))
+                #TODO: Abort early - all labels convering to 2 or 8 because no abort early
 
-                # print("pert_norm")
-                # print(type(pert_norm))
+                # change class logits maybe
+                current_adv_iter = x_pert
 
-                # print("pert_output")
-                # print(type(pert_output))
+                current_adv = torch.tensor(torch.abs(previous_loss - loss) > 0.5)
 
-                # print("loss")
-                # print(type(loss))
+                previous_loss = loss
 
-                pert_pred = pert_output.detach().argmax(1)
+                norm_iter = torch.flatten(x_pert - x).norm(p=2, dim=-1)
+                closest_norm = norm_iter < best_adv_norm
+                best_adv_norm_iter = torch.logical_and(closest_norm, current_adv_iter)
 
-                # print("pert_pred")
-                # print(pert_pred)
-                # print("pert_output")
-                # print(pert_output)
+                best_adv = torch.where(best_adv_norm_iter, x_pert, best_adv)
+                best_adv_norm = torch.where(best_adv_norm_iter, norm_iter, best_adv_norm)                
 
-                # print("pert_norm")
-                # print(pert_norm)
-                # print("best_l2")
-                # print(best_l2)
-                # print(best_l2[0])
+            lower_bound_const = torch.where(current_adv, lower_bound_const, const)
+            upper_bound_const = torch.where(current_adv, const, upper_bound_const)
 
-                if (pert_pred.cpu().numpy().item() != label.cpu().numpy().item()):
+            const_exp_search = const * 10
+            const_binary_search = (lower_bound_const + upper_bound_const) / 2
+            const = torch.where(torch.isinf(upper_bound_const), const_exp_search, const_binary_search)
 
-                    if pert_norm < best_l2[0]:
-                        best_l2[0] = pert_norm
-                        best_l2_pred[0] = pert_pred
+        best_adv_pred = torch.argmax(self.model(best_adv))
 
-                    if pert_norm < optimal_best_l2[0]:
-                        optimal_best_l2[0] = pert_norm
-                        optimal_best_l2_pred = pert_pred
-                        optimal_best_image = pert_image
-
-            if best_l2_pred[0] != -1:
-                if const[0] < upper_bound_const[0]:
-                    upper_bound_const[0] = const[0]
-
-                if upper_bound_const[0] < 1e10 * 0.1:
-                    const[0] = (lower_bound_const[0] + upper_bound_const[0]) / 2
-
-            else:
-                if const[0] > lower_bound_const[0]:
-                    lower_bound_const[0] = const[0]
-
-                if upper_bound_const[0] < 1e10 * 0.1:
-                    const[0] = (lower_bound_const[0] + upper_bound_const[0]) / 2
-                
-                else:
-                    const[0] = const[0] * 10
-
-        return optimal_best_image, label.cpu().numpy().item(), optimal_best_l2_pred.cpu().numpy().item(), outer_step * inner_step, pert_output
+        return best_adv, label.cpu().numpy().item(), best_adv_pred.detach().cpu().numpy().item(), outer_step * inner_step, best_adv
 
 
-    def optimize(self, x, label_one_hot, pert, const):
+    def to_tanh(self, x):
+        max_bound = 0.5
+        min_bound = -0.5
 
-        pert_image = self.from_tanh_space(x + pert)
-        pert_output = self.model.forward_omit_softmax(pert_image)
-        orig_image = self.from_tanh_space(x)
+        x = torch.clamp(x, min_bound, max_bound)
+        x = (x - min_bound) / (max_bound - min_bound)
+        x = ((x * 2) - 1) * 0.9999
+        return torch.atanh(x)
+    
+    def from_tanh(self, x):
 
-        # print(pert_image)
-        # print(x)
+        max_bound = 0.5
+        min_bound = -0.5
 
-        # print("x after tanh")
-        # print(x)
-        # print("x from tanh")
-        # print(orig_image)
-        # print("pert_image")
-        # print(pert_image)
+        x = (torch.tanh(x) / 0.9999 + 1) / 2
+        x = x * (max_bound - min_bound) + min_bound
+        return torch.clamp(x, 0, 1)
+    
+    def optimize(self, x_tanh, x_from_tanh, delta, const, rows, attack_optimizer):
+        x = self.from_tanh(x_tanh + delta)
 
-        # plt.subplot(1, 3, 1)
-        # plt.imshow(x.squeeze().detach().permute(1, 2, 0))
-        # plt.subplot(1, 3, 2)
-        # plt.imshow(orig_image.squeeze().detach().permute(1, 2, 0))
-        # plt.subplot(1, 3, 3)
-        # plt.imshow(pert_image.squeeze().detach().permute(1, 2, 0))
-        # plt.show()
+        logits = self.model.forward_omit_softmax(x)
+        one_hot_like = torch.eye(logits.size(dim=1))
+        one_hot_like[self.model.test_data.targets] = 1e10
+        other_logits = torch.argmax((logits - one_hot_like), axis=-1)
 
-        pert_norm = torch.pow(pert_image - orig_image, 2)
-        pert_norm = torch.sum(pert_norm.view(pert_norm.size(0), -1), 1)
+        c_min = self.model.test_data.targets
+        c_max = torch.argmax(other_logits, axis=-1)
 
-        real = torch.sum(label_one_hot * pert_output, 1)
-        # replace np.inf with 1e4
-        other = torch.max(((1 - label_one_hot) * pert_output - label_one_hot * 1e4), 1)[0]
+        adv_loss = logits[rows, c_min] - logits[rows, c_max]
 
-        #TODO: Targeted
-        f = torch.clamp(real - other + self.confidence, min = 0.0)
+        adv_loss += self.confidence
+        adv_loss = torch.maximum(torch.zeros(1), adv_loss)
 
-        loss = torch.sum(pert_norm + const * f)
+        adv_loss *= const
 
-        self.optimizer.zero_grad()
+        sq_norm = torch.flatten(x - x_from_tanh).square().sum(axis=-1)
+        loss = torch.sum(adv_loss) + torch.sum(sq_norm)
+
+        attack_optimizer.zero_grad()
         loss.backward(retain_graph=True)
-        self.optimizer.step()
+        attack_optimizer.step()
 
-        loss = loss.data
+        loss_grad = loss.data
 
-        return pert_image, pert_norm, pert_output, loss
-    
-    # def to_tanh_space(self, x):
-    #     return torch.atanh(torch.clamp(x * 2 - 1, min = -1, max = 1))
-    
-    # def from_tanh_space(self, x):
-    #     return 0.5 * ( torch.tanh(x) + 1 )
-
-    # def atanh(self, x):
-    #     x = x * (1 - 1e-6)
-    #     return 0.5 * torch.log( (1.0 + x) / (1.0 - x) )
-
-    def to_tanh_space(self, x):
-
-        boxmax = 0.5
-        boxmin = -0.5
-
-        boxmul = (boxmax - boxmin) / 2.0
-        boxplus = (boxmin + boxmax) / 2.0
-
-        # return self.atanh( (x - boxplus) / boxmul)
-        return torch.atanh( (x - boxplus) / boxmul)
-    
-    def from_tanh_space(self, x):
-
-        boxmax = 0.5
-        boxmin = -0.5
-
-        boxmul = (boxmax - boxmin) / 2.0
-        boxplus = (boxmin + boxmax) / 2.0
-
-        return torch.tanh(x) * boxmul + boxplus
-
-
-# class CW(BaseAttack):
-#     def __init__(self, model, device, targeted, init_const, binary_search_steps, confidence, lr, max_steps, loss_function, optimizer):
-#         super(CW, self).__init__("CW", model, device, targeted, loss_function, optimizer)
-#         self.init_const = init_const
-#         self.binary_search_steps = binary_search_steps
-#         self.confidence = confidence
-#         self.lr = lr
-#         self.max_steps = max_steps
-
-#     def forward_individual(self, input, label):
-#         label = label.unsqueeze(0)
-
-#         boxmax = 0.5
-#         boxmin = -0.5
-#         boxmul = (boxmax - boxmin) / 2.0
-#         boxplus = (boxmin + boxmax) / 2.0
-
-#         #x = np.arctanh( (input - boxplus) / boxmul * 0.99999)
-#         pert_image = input.detach().clone()
-#         x = pert_image[None, :].requires_grad_(True)
-
-#         lower_bound_const = np.zeros(1)
-#         const = np.ones(1) * self.init_const
-#         upper_bound_const = np.ones(1) * 1e10
-#         #upper_bound_const = np.ones(1)
-
-#         best_l2 = 1e10
-#         best_score = -1
-#         best_attack = torch.zeros(x.shape)
-#         best_pert = torch.zeros(x.shape)
-
-#         attack_label = label.cpu().numpy().item()
-
-#         for outer_step in range(self.binary_search_steps):
-
-#             const = (lower_bound_const + upper_bound_const) / 2
-
-#             i_best_l2 = 1e10
-#             i_best_score = -1
-
-#             prev = np.inf
-
-#             optimizer_x = x.requires_grad_(True)
-#             optimizer = optim.Adam([optimizer_x], lr=self.lr)
-
-#             for inner_step in range(self.max_steps):
-
-#                 init_pred = self.model(optimizer_x)
-
-#                 one_hot = F.one_hot(label, num_classes=init_pred.size(-1)).float()  
-                
-#                 i = torch.max( (1 - one_hot) * init_pred, dim=1)[0].detach()
-#                 j = torch.max(one_hot * init_pred, dim=1)[0].detach()
-
-#                 orig_loss = self.loss_function(init_pred, label)
-#                 attack_loss = torch.sum( torch.clamp( (i - j), min=self.confidence) * const )
-#                 loss = orig_loss + attack_loss
-
-#                 self.optimizer.zero_grad()
-#                 loss.backward()
-#                 self.optimizer.step()
-
-#                 pert = x.detach() + (optimizer_x.detach() - x.detach()).clamp(-0.3, 0.3)
-#                 optimizer_x = torch.clamp(pert, 0, 1)
-
-#             attack_pred = self.model(optimizer_x)
-#             attack_label = attack_pred.argmax(axis=1).cpu().numpy().item()
-
-#             if attack_label != label.cpu().numpy().item():
-#                 upper_bound_const = const
-#                 best_attack = optimizer_x
-#                 best_pert = pert
-#             else:
-#                 lower_bound_const = const
-
-#         # print(type(best_attack))
-#         # print(best_attack.size)
-
-#         return best_attack, label.cpu().numpy().item(), attack_label, outer_step * inner_step, best_pert
-
-
-
-
-
-
-
-    
-    # def forward_individual(self, input, label):
-    #     pert_image = input.detach().clone()
-    #     x = pert_image[None, :].requires_grad_(True) 
-    #     label = label.unsqueeze(0)
-    #     steps = 0
-    #     attack_label = label.cpu().numpy().item()
-    #     shape = input.cpu().numpy().shape
-    #     total_pert = np.zeros(shape)
-
-    #     while attack_label == label.cpu().numpy().item() and steps <self.max_steps:
-    #         init_pred = self.model(x)
-
-    #         loss = self.loss_function(init_pred, label)
-
-    #         self.optimizer.zero_grad()
-    #         loss.backward(retain_graph=True)
-    #         self.optimizer.step()
-
-    #         # Checks to see if image is missclassified - ie attack has worked, so terminate for loop
-    #         # if init_pred.argmax(1)[0] != label[0]:
-    #         #     break
-
-    #         x_grad = x.grad.data
-
-    #         normalization = torch.norm(x_grad, dim=1, keepdim=True)
-
-    #         perturbation = x_grad * (self.c / normalization)
-    #         total_pert = np.float32(total_pert + perturbation.numpy())
-
-    #         pert_image = x + perturbation
-
-    #         # Clip perturbed input to be within the valid range [0, 1]
-    #         x = torch.clamp(pert_image, 0, 1)
-
-    #         x.requires_grad_(True).retain_grad()
-
-    #         attack_pred = self.model(x)
-    #         attack_label = attack_pred.argmax(axis=1).cpu().numpy().item()
-
-    #         steps += 1
-
-    #         #if (self.model(input) != labels)
-
-    #     return x, label.cpu().numpy().item(), attack_label, steps, total_pert
+        return loss, x, logits, loss_grad

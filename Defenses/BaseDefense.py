@@ -28,3 +28,7 @@ class BaseDefense():
     def forward_individual(self, input, label=None):
         """Should be overwritten by every subclass"""
         raise NotImplementedError
+    
+    def forward_batch(self, input, label=None):
+        """Should be overwritten by every subclass"""
+        raise NotImplementedError

@@ -5,46 +5,38 @@ from Attacks.BaseAttack import BaseAttack
 
 """
 TODO: Write comment explaining attack
-TODO: Move DeepFool into here
 """
 
 class DeepFool(BaseAttack):
-    def __init__(self, model, device, targeted, step, maxIter, loss_function, optimizer):
+    def __init__(self, model, device, targeted, step, max_iter, loss_function, optimizer):
         super().__init__("DeepFool", model, device, targeted, loss_function, optimizer)
         self.step = step
-        self.maxIter = maxIter
+        self.max_iter = max_iter
 
 
     def forward_individual(self, input, labels):
-        #print(input.shape)
-
         x_0 = input[None, :, :, :].requires_grad_(True)
 
         fwd = self.model.forward_omit_softmax(x_0)
         fwd_img = fwd.data.cpu().numpy().flatten()
 
         classes_indexes = fwd_img.flatten().argsort()[::-1]
-        # print(classes_indexes)
         classes_indexes = classes_indexes[0:self.model.num_classes]
-        # print(classes_indexes)
 
         label = classes_indexes[0]
         shape = input.cpu().numpy().shape
-        #pert_image = copy.deepcopy(input)
         pert_image = input.detach().clone()
         direction = np.zeros(shape)
         total_pert = np.zeros(shape)
         iLoops = 0
-        #x = pert_image[None, :].requires_grad=True
         x = pert_image[None, :].requires_grad_(True)
-        #Variable(pert_image[None, :], requires_grad=True)
 
         logits = self.model.forward_omit_softmax(x)
 
 
         preds = [logits[0, classes_indexes[k]] for k in range(self.model.num_classes)]
         attack_label = label
-        while attack_label == label and iLoops < self.maxIter:
+        while attack_label == label and iLoops < self.max_iter:
           min_pert = np.inf
           logits[0, classes_indexes[0]].backward(retain_graph=True)
           old_grad = x.grad.data.cpu().numpy().copy()
@@ -66,7 +58,6 @@ class DeepFool(BaseAttack):
           total_pert = np.float32(total_pert + pert_ILoop)
           pert_image = input + (1 + self.step) * torch.from_numpy(total_pert)
           x = pert_image.requires_grad_(True) 
-          # Variable(pert_image, requires_grad=True)
 
           logits = self.model.forward_omit_softmax(x)
 
@@ -74,9 +65,6 @@ class DeepFool(BaseAttack):
           iLoops += 1
 
         total_pert = (1 + self.step) * total_pert
-
-        #return total_pert, iLoops, label, attack_label, pert_image
-        #return pert_image
 
         return pert_image, labels.cpu().numpy().item(), attack_label, iLoops, total_pert
 

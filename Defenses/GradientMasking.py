@@ -4,7 +4,7 @@ from Defenses.BaseDefense import BaseDefense
 from scipy.ndimage import gaussian_filter
 
 """
-TODO: Write Defense / Update defense and see what the hell is going on here
+TODO: Write Defense / Update defense and see what is going on here
 """
 
 class GradientMasking(BaseDefense):

@@ -57,27 +57,6 @@ class BaseAttack():
         """Should be overwritten by every subclass"""
         raise NotImplementedError
 
-    
-    # Update Targeted for Increased Customization
-    
-    def set_targeted(self, targeted):
-        if targeted:
-            self.targeted = True
-        else:
-            self.targeted - False   
-
-    def get_target_label():
-        pass
-
-    def target_by_label():
-        pass
-
-    def target_by_least_likely():
-        pass
-
-    def target_by_most_likely():
-        pass         
-
     def __call__(self, inputs, labels=None):
 
         inputs = self.denormalize(inputs)

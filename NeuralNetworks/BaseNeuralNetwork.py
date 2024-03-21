@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 
+from Defenses import AdverserialExamples
+
 class BaseNeuralNetwork(nn.Module):
     def __init__(self, dataset_name, device, num_channels, num_features, num_out_features, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data):
         super(BaseNeuralNetwork, self).__init__()
@@ -133,7 +135,7 @@ class BaseNeuralNetwork(nn.Module):
         return self.history
     
     # TODO: Fix
-    def train_model_defence(self, loss_function, optimizer, attack, defense):
+    def train_model_adverserial_examples(self, loss_function, optimizer, adverserial_examples):
         self.train()
 
         total_train_loss = 0
@@ -147,10 +149,9 @@ class BaseNeuralNetwork(nn.Module):
     
             optimizer.zero_grad()
 
-            inputs_attack = attack.forward(inputs, labels)
-            inputs_defense = defense.forward(inputs_attack, labels)
+            inputs_attack = adverserial_examples.forward_batch(inputs, labels)
         
-            pred = self(torch.from_numpy(inputs_defense).float())
+            pred = self(inputs_attack)
             loss = loss_function(pred, labels)
             
             loss.backward()
@@ -165,10 +166,9 @@ class BaseNeuralNetwork(nn.Module):
             for (inputs, labels) in self.val_dataloader:
                 (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
 
-                inputs_attack = attack.forward(inputs, labels)
-                inputs_defense = defense.forward(inputs_attack, labels)
+                inputs_attack = adverserial_examples.forward_batch(inputs, labels)
 
-                pred = self(inputs_defense)
+                pred = self(inputs_attack)
                 loss = loss_function(pred, labels)
 
                 total_val_loss += loss
@@ -187,7 +187,7 @@ class BaseNeuralNetwork(nn.Module):
         self.history["val_acc"].append(val_correct)
 
         if avg_val_loss.cpu().detach().numpy() <= min(self.history["val_loss"]):
-            self.save_defense_model(defense.defense)
+            self.save_defense_model("Adverserial_Defense")
 
         # Do I need to return the history??
         return self.history
@@ -218,6 +218,7 @@ class BaseNeuralNetwork(nn.Module):
                 examples.append( (pred, inputs.squeeze().detach().cpu()) )
 
             break
+            print("iter")
 
         # TODO: Fix classification
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
@@ -271,17 +272,12 @@ class BaseNeuralNetwork(nn.Module):
             results["perturbations"] += input_attack_results[1]["perturbations"]
             results["original_image"] += input_attack_results[1]["original_image"]
 
-            # print(preds)
-            # print(results["attack_label"])
-            # print(preds_true)
-            # print(results["final_label"])
-
-
             # TODO: A better way of generating examples
             if len(examples) < 5:
                 examples.append( (init_pred, attack_pred, input_attack_results[0].squeeze().detach().cpu()) )
 
             break
+            print("iter")
 
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
@@ -331,6 +327,9 @@ class BaseNeuralNetwork(nn.Module):
 
         # Preds are the array of probability percentage
         return cr, preds, examples
+    
+    def test_baseline_defense_model(self, loss_function, defense):
+        self.eval()
     
     def generate_example_images(self):
         pass

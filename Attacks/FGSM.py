@@ -11,19 +11,9 @@ class FGSM(BaseAttack):
         super(FGSM, self).__init__("FGSM", model, device, targeted, loss_function, optimizer)
         self.eps = eps
 
-    # def forward(self, input, label):
-    #     input_grad = input.grad.data
-
-    #     sign_data_grad = input_grad.sign()
-
-    #     perturbed_input = input + self.eps * sign_data_grad
-    #     perturbed_input = torch.clamp(perturbed_input, 0, 1)
-
-    #     return perturbed_input
-
-    def forward(self, input, label):
-        input = input.clone().detach().to(self.device)
-        label = label.clone().detach().to(self.device)
+    def forward_individual(self, input, label):
+        input = input[None,:].requires_grad_(True)
+        label = label.unsqueeze(0)
 
         # TODO: Make decision
         if self.targeted:
