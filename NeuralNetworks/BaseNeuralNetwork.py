@@ -274,6 +274,8 @@ class BaseNeuralNetwork(nn.Module):
 
             # TODO: A better way of generating examples
             if len(examples) < 5:
+            #for i in range(5):
+                #examples.append( (results["original_image"][i], results["final_label"][i], results["pert_image"][i].squeeze().detach().cpu()) )
                 examples.append( (init_pred, attack_pred, input_attack_results[0].squeeze().detach().cpu()) )
 
             break

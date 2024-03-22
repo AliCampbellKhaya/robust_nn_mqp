@@ -32,17 +32,27 @@ class Pixle(BaseAttack):
         pert_image = input.detach().clone()
         x = pert_image[None, :]
 
-        flat_img = x.view(-1)
+
+        #flat_img = x.view(-1)
+        #print(x.size())
+        flat_img = x.flatten(start_dim=2)
+        #print(flat_img.size())
+
 
         indexes = []
         counter = 0
-        for item in flat_img:
-            indexes.append([item, counter])
+        print(flat_img[0].size())
+        for i in range(len(flat_img[0])):
+            #print(item.size())
+            indexes.append([flat_img[0][0][i] + flat_img[0][1][i] + flat_img[0][2][i], counter, [flat_img[0][0][i] , flat_img[0][1][i] , flat_img[0][2][i]]])
             counter += 1
 
         indexes = sorted(indexes)
-        attack_img = flat_img
+        attack_img = flat_img[0]
         swap = 0
+
+
+        #print(attack_img)
 
         counter = 0
         for counter in range(len(indexes)):
@@ -50,10 +60,18 @@ class Pixle(BaseAttack):
                 counter += 1
                 continue
 
-            attack_img[indexes[counter][1]] = indexes[counter-1][0]
-            attack_img[counter-1] = indexes[counter-1][0]
+            #print(attack_img[indexes[counter][1]] )
+            #print(attack_img)
+
+            print(torch.Tensor(indexes[counter-1][2]).size())
+
+            attack_img[indexes[counter][1]] = torch.Tensor(indexes[counter-1][2])
+            attack_img[counter - 1] = torch.Tensor(indexes[counter-1][2])
             counter += 1
 
+        # print(attack_img)
+        # print("-"*50)
+        print(attack_img.size())
         attack_img = attack_img.view(x.size())
 
         attack_pred = self.model(attack_img)
