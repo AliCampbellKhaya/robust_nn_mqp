@@ -7,7 +7,10 @@ TODO: convert into actual code
 """
 
 class Distiller(BaseDefense):
-    def __init__(self, model, device)
+    def __init__(self, model, device):
+        super(Distiller, self).__init__("Distiller", model, device)
+
+        
 
 
 

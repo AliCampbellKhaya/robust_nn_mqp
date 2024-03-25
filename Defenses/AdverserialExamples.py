@@ -14,8 +14,8 @@ TODO: Write Defense
 """
 
 class AdverserialExamples(BaseDefense):
-    def __init__(self, ifgsm, cw, deepfool, pixle):
-        super(AdverserialExamples, self).__init__()
+    def __init__(self, model, device, ifgsm, cw, deepfool, pixle):
+        super(AdverserialExamples, self).__init__("AE", model, device)
         random.seed(42)
 
         self.ifgsm = ifgsm
