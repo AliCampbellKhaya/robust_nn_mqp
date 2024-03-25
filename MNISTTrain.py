@@ -46,3 +46,10 @@ for e in range(epochs):
 
 cr, preds = model.test_model(loss_function)
 print(cr)
+
+for e in range(epochs):
+    print(f"Epoch {e+1}")
+    teacher_history, student_history = model.train_model_distiller(loss_function, optimizer, adverserials)
+    print(teacher_history)
+    print(student_history)
+    print("-"*50)

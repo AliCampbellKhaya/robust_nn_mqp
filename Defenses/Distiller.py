@@ -30,7 +30,13 @@ class Distiller(BaseDefense):
         self.learning_rate = learning_rate
         self.loss_function = loss_function
 
+        self.teacher.save_defense_model("Teacher_Distiller")
+        self.student.save_defense_model("Student_Distiller")
+
     def train_distillation(self):
+        self.teacher.load_defense_model("Teacher_Distiller")
+        self.student.load_defense_model("Student_Distiller")
+
         teacher_optimizer = optim.Adam(self.teacher.parameters(), lr=self.learning_rate)
         teacher_history = self.teacher.train_model_distiller(loss_function=self.loss_function, optimizer=teacher_optimizer)
 
