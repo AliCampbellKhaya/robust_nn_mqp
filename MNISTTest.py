@@ -90,7 +90,7 @@ model.load_model()
 
 print("Pixle Attack Results")
 start = time.time()
-pixle_attack = Pixle(model, device, targeted=False, attack_type=0, max_steps=20, max_patches=10, loss_function=loss_function, optimizer=optimizer)
+pixle_attack = Pixle(model, device, targeted=False, attack_type=0, max_steps=20, max_patches=20, loss_function=loss_function, optimizer=optimizer)
 cr, preds, examples, results = model.test_attack_model(loss_function, pixle_attack)
 print(cr)
 print(classification_report(results["final_label"], results["attack_label"]))

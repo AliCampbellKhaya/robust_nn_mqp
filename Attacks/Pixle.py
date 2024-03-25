@@ -54,7 +54,7 @@ class Pixle(BaseAttack):
                 loss = self.get_loss(attacked_image, label)
                 print(loss)
 
-                if loss > best_loss:
+                if loss < best_loss:
                     best_loss = loss
                     best_image = attacked_image
 
@@ -101,6 +101,10 @@ class Pixle(BaseAttack):
                 diff = destination_image - pixel
                 diff = diff[0].abs().mean(0).view(-1)
 
+                # using similarity instead of difference
+                diff = 1 / (1 + diff)
+                diff[diff == 1] = 0
+
                 probs = torch.softmax(diff, 0).cpu().numpy()
                 indexes = np.arange(len(diff))
 
@@ -134,12 +138,12 @@ class Pixle(BaseAttack):
 
         indexes = torch.tensor(destinations)
         destination_image = destination_image.detach().clone()
-        destination_image[0, :, indexes[:, 0], indexes[:, 1]] = perturbation
+        destination_image[:, :, indexes[:, 0], indexes[:, 1]] = perturbation
 
         return destination_image
     
     def get_loss(self, image, label):
-        prob = self.model.forward(image).detach().clone().numpy()
+        prob = self.model.forward(image).clone().detach().cpu().numpy()
         prob = prob[np.arange(len(prob)), label]
 
         return prob.sum()
