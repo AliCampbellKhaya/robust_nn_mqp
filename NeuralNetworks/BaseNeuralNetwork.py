@@ -192,6 +192,55 @@ class BaseNeuralNetwork(nn.Module):
         # Do I need to return the history??
         return self.history
     
+    def train_model_distiller(self, loss_function, optimizer):
+        self.train()
+
+        total_train_loss = 0
+        total_val_loss = 0
+
+        total_train_correct = 0
+        total_val_correct = 0
+    
+        for (inputs, labels) in self.train_dataloader:
+            (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
+    
+            optimizer.zero_grad()
+        
+            pred = self(inputs)
+            loss = loss_function(pred, labels)
+            
+            loss.backward()
+            optimizer.step()
+
+            total_train_loss += loss
+            total_train_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
+
+        with torch.no_grad():
+            self.eval()
+
+            for (inputs, labels) in self.val_dataloader:
+                (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
+
+                pred = self(inputs)
+                loss = loss_function(pred, labels)
+
+                total_val_loss += loss
+                total_val_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
+
+        # Train and Val Steps
+        avg_train_loss = total_train_loss / ( len(self.val_dataloader.dataset) / self.batch_size)
+        avg_val_loss = total_val_loss / ( len(self.val_dataloader.dataset) / self.batch_size)
+
+        train_correct = total_train_correct / len(self.train_dataloader.dataset)
+        val_correct = total_val_correct / len(self.val_dataloader.dataset)
+
+        self.history["train_loss"].append(avg_train_loss.cpu().detach().numpy())
+        self.history["train_acc"].append(train_correct)
+        self.history["val_loss"].append(avg_val_loss.cpu().detach().numpy())
+        self.history["val_acc"].append(val_correct)
+
+        return self.history
+    
     def test_model(self, loss_function):
         self.eval()
 
