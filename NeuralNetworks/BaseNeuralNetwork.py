@@ -181,10 +181,10 @@ class BaseNeuralNetwork(nn.Module):
         train_correct = total_train_correct / len(self.train_dataloader.dataset)
         val_correct = total_val_correct / len(self.val_dataloader.dataset)
 
-        self.history["train_loss"].append(avg_train_loss.cpu().detach().numpy())
-        self.history["train_acc"].append(train_correct)
-        self.history["val_loss"].append(avg_val_loss.cpu().detach().numpy())
-        self.history["val_acc"].append(val_correct)
+        # self.history["train_loss"].append(avg_train_loss.cpu().detach().numpy())
+        # self.history["train_acc"].append(train_correct)
+        # self.history["val_loss"].append(avg_val_loss.cpu().detach().numpy())
+        # self.history["val_acc"].append(val_correct)
 
         if avg_val_loss.cpu().detach().numpy() <= min(self.history["val_loss"]):
             self.save_defense_model("Adverserial_Defense")

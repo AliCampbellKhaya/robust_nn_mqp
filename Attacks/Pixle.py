@@ -76,123 +76,123 @@ class Pixle(BaseAttack):
         # attack_label = torch.argmax(self.model(attackedImage))
         # return attackedImage, label.cpu().numpy().item(), attack_label.detach().cpu().numpy().item(), counterTwo, None
 
-        label = label.unsqueeze(0)
-        pert_image = input.detach().clone()
-        x = pert_image[None, :]
+    #     label = label.unsqueeze(0)
+    #     pert_image = input.detach().clone()
+    #     x = pert_image[None, :]
 
-        x_bounds = (2, 10)
-        y_bounds = (2, 10)
+    #     x_bounds = (2, 10)
+    #     y_bounds = (2, 10)
 
-        best_image = x.clone()
-        best_loss = self.get_loss(x, label)
+    #     best_image = x.clone()
+    #     best_loss = self.get_loss(x, label)
 
-        for outer_step in range(self.max_steps):
+    #     for outer_step in range(self.max_steps):
 
-            for inner_step in range(self.max_patches):
-                x_coord, y_coord, x_offset, y_offset = self.get_patches(x, x_bounds, y_bounds)
+    #         for inner_step in range(self.max_patches):
+    #             x_coord, y_coord, x_offset, y_offset = self.get_patches(x, x_bounds, y_bounds)
 
-                destinations = self.get_patch_mapping(x, best_image, x_coord, x_offset, y_coord, y_offset)
+    #             destinations = self.get_patch_mapping(x, best_image, x_coord, x_offset, y_coord, y_offset)
 
-                solution = [x_coord, y_coord, x_offset, y_offset]
+    #             solution = [x_coord, y_coord, x_offset, y_offset]
 
-                attacked_image = self.generate_perturbation(x, solution, destinations, best_image)
+    #             attacked_image = self.generate_perturbation(x, solution, destinations, best_image)
 
-                loss = self.get_loss(attacked_image, label)
-                print(loss)
+    #             loss = self.get_loss(attacked_image, label)
+    #             print(loss)
 
-                if loss < best_loss:
-                    best_loss = loss
-                    best_image = attacked_image
+    #             if loss < best_loss:
+    #                 best_loss = loss
+    #                 best_image = attacked_image
 
-        best_label = torch.argmax(self.model(best_image))
+    #     best_label = torch.argmax(self.model(best_image))
 
-        return best_image, label.cpu().numpy().item(), best_label.detach().cpu().numpy().item(), outer_step * inner_step, torch.zeros(attacked_image.cpu().numpy().shape)
+    #     return best_image, label.cpu().numpy().item(), best_label.detach().cpu().numpy().item(), outer_step * inner_step, torch.zeros(attacked_image.cpu().numpy().shape)
 
     
-    def get_patches(self, image, x_bounds, y_bounds):
-        height, width = image.shape[2:]
+    # def get_patches(self, image, x_bounds, y_bounds):
+    #     height, width = image.shape[2:]
 
-        x_coord, y_coord = np.random.uniform(0, 1, 2)
+    #     x_coord, y_coord = np.random.uniform(0, 1, 2)
 
-        x_offset = np.random.randint(x_bounds[0], x_bounds[1] + 1)
-        y_offset = np.random.randint(y_bounds[0], y_bounds[1] + 1)
+    #     x_offset = np.random.randint(x_bounds[0], x_bounds[1] + 1)
+    #     y_offset = np.random.randint(y_bounds[0], y_bounds[1] + 1)
 
-        x_coord = int(x_coord * (width - 1))
-        y_coord = int(y_coord * (height - 1))
+    #     x_coord = int(x_coord * (width - 1))
+    #     y_coord = int(y_coord * (height - 1))
 
-        if x_coord + x_offset > width:
-            x_offset = width - x_coord
+    #     if x_coord + x_offset > width:
+    #         x_offset = width - x_coord
 
-        if y_coord + y_offset > height:
-            y_offset = height - y_coord
+    #     if y_coord + y_offset > height:
+    #         y_offset = height - y_coord
 
-        return x_coord, y_coord, x_offset, y_offset
+    #     return x_coord, y_coord, x_offset, y_offset
     
-    # change from random to max probability
-    def get_patch_mapping(self, image, destination_image, x_coord, x_offset, y_coord, y_offset):
-        height, width = image.shape[2:]
-        destinations = []
+    # # change from random to max probability
+    # def get_patch_mapping(self, image, destination_image, x_coord, x_offset, y_coord, y_offset):
+    #     height, width = image.shape[2:]
+    #     destinations = []
 
-        # True Random
-        # for i in range(x_offset):
-        #     for j in range(y_offset):
-        #         dx, dy = np.random.uniform(0, 1, 2)
-        #         dx = int(dx * (width - 1))
-        #         dy = int(dy * (height - 1))
-        #         destinations.append([dx, dy])
+    #     # True Random
+    #     # for i in range(x_offset):
+    #     #     for j in range(y_offset):
+    #     #         dx, dy = np.random.uniform(0, 1, 2)
+    #     #         dx = int(dx * (width - 1))
+    #     #         dy = int(dy * (height - 1))
+    #     #         destinations.append([dx, dy])
 
-        for i in np.arange(y_coord, y_coord + y_offset):
-            for j in np.arange(x_coord, x_coord + x_offset):
-                pixel = image[:, :, i : i +1, j : j + 1]
-                diff = destination_image - pixel
-                diff = diff[0].abs().mean(0).view(-1)
+    #     for i in np.arange(y_coord, y_coord + y_offset):
+    #         for j in np.arange(x_coord, x_coord + x_offset):
+    #             pixel = image[:, :, i : i +1, j : j + 1]
+    #             diff = destination_image - pixel
+    #             diff = diff[0].abs().mean(0).view(-1)
 
-                # using similarity instead of difference
-                diff = 1 / (1 + diff)
-                diff[diff == 1] = 0
+    #             # using similarity instead of difference
+    #             diff = 1 / (1 + diff)
+    #             diff[diff == 1] = 0
 
-                probs = torch.softmax(diff, 0).cpu().numpy()
-                indexes = np.arange(len(diff))
+    #             probs = torch.softmax(diff, 0).cpu().numpy()
+    #             indexes = np.arange(len(diff))
 
-                pair = None
+    #             pair = None
 
-                pixel_iter = iter( sorted( zip( indexes, probs), key=lambda pit: pit[1], reverse=True ) )
+    #             pixel_iter = iter( sorted( zip( indexes, probs), key=lambda pit: pit[1], reverse=True ) )
 
-                while True:
-                    index = next(pixel_iter)[0]
+    #             while True:
+    #                 index = next(pixel_iter)[0]
 
-                    dy, dx = np.unravel_index(index, (height, width))
+    #                 dy, dx = np.unravel_index(index, (height, width))
 
-                    if dy == i and dx == j:
-                        continue
+    #                 if dy == i and dx == j:
+    #                     continue
 
-                    pair = (dx, dy)
-                    break
+    #                 pair = (dx, dy)
+    #                 break
 
-                destinations.append(pair)
+    #             destinations.append(pair)
 
-        return destinations
+    #     return destinations
 
-    def generate_perturbation(self, image, solution, destinations, destination_image):
-        channels, height, width = image.shape[1:]
+    # def generate_perturbation(self, image, solution, destinations, destination_image):
+    #     channels, height, width = image.shape[1:]
 
-        x1, y1, x2, y2 = solution
+    #     x1, y1, x2, y2 = solution
 
-        targeted_pixels = np.ix_(range(channels), np.arange(y1, y1 + y2), np.arange(x1, x1 + x2))
+    #     targeted_pixels = np.ix_(range(channels), np.arange(y1, y1 + y2), np.arange(x1, x1 + x2))
 
-        perturbation = image[0][targeted_pixels].view(channels, -1)
+    #     perturbation = image[0][targeted_pixels].view(channels, -1)
 
-        indexes = torch.tensor(destinations)
-        destination_image = destination_image.detach().clone()
-        destination_image[:, :, indexes[:, 0], indexes[:, 1]] = perturbation
+    #     indexes = torch.tensor(destinations)
+    #     destination_image = destination_image.detach().clone()
+    #     destination_image[:, :, indexes[:, 0], indexes[:, 1]] = perturbation
 
-        return destination_image
+    #     return destination_image
     
-    def get_loss(self, image, label):
-        prob = self.model.forward(image).clone().detach().cpu().numpy()
-        prob = prob[np.arange(len(prob)), label]
+    # def get_loss(self, image, label):
+    #     prob = self.model.forward(image).clone().detach().cpu().numpy()
+    #     prob = prob[np.arange(len(prob)), label]
 
-        return prob.sum()
+    #     return prob.sum()
 
 
     # def forward_basic(self, input, label):

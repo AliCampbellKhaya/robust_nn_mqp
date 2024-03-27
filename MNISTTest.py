@@ -19,7 +19,7 @@ from Attacks.Pixle import Pixle
 from Defenses.FeatureSqueezing import FeatureSqueezing
 from Defenses.GradientMasking import GradientMasking
 from Defenses.AdverserialExamples import AdverserialExamples
-#from Defenses.Distiller import Distiller
+from Defenses.Distiller import Distiller
 
 print("Test for MNIST")
 
@@ -41,7 +41,40 @@ model.load_model()
 # print(cr)
 # end = time.time()
 # print(f"Time to test MNIST neural network: {end-start}")
-# model.display_images(examples)
+#model.display_images(examples)
+
+# print("FGSM Attack Results")
+# start = time.time()
+# fgsm_attack = FGSM(model, device, targeted=False, loss_function=loss_function, optimizer=optimizer, eps=0.1)
+# cr, preds, examples, results = model.test_attack_model(loss_function, fgsm_attack)
+# print(cr)
+# end = time.time()
+# print(f"Time to test FGSM attack on MNIST neural network: {end-start}")
+
+print("IFGSM Attack Results")
+start = time.time()
+ifgsm_attack = IFGSM(model, device, targeted=False, loss_function=loss_function, optimizer=optimizer, eps=0.1, max_steps=20)
+cr, preds, examples, results = model.test_attack_model(loss_function, ifgsm_attack)
+print(cr)
+end = time.time()
+print(f"Average iterations to perturb image: {results["iterations"]}")
+print(f"Time to test IFGSM attack on MNIST neural network: {end-start}")
+
+mnist_distiller = Distiller(model, device, "MNIST", learning_rate, loss_function)
+# print("Initial results for distilled MNIST neural network")
+# start = time.time()
+# cr, preds, examples = mnist_distiller.test_distillation()
+# print(cr)
+# end = time.time()
+# print(f"Time to test distilled MNIST neural network: {end-start}")
+
+print("Initial results for IFGSM distilled MNIST neural network")
+start = time.time()
+cr, preds, examples, results = mnist_distiller.test_attack_distillation(ifgsm_attack)
+print(cr)
+end = time.time()
+print(f"Average iterations to perturb image: {results["iterations"]}")
+print(f"Time to test IFGSM attack on distilled MNIST neural network: {end-start}")
 
 
 #TODO: Fix
@@ -88,16 +121,16 @@ model.load_model()
 # print(f"Time to test DeepFool on Mnist neural network: {end-start}")
 # model.display_attacked_images(examples)
 
-print("Pixle Attack Results")
-start = time.time()
-pixle_attack = Pixle(model, device, targeted=False, attack_type=0, max_steps=1, max_patches=20, loss_function=loss_function, optimizer=optimizer)
-cr, preds, examples, results = model.test_attack_model(loss_function, pixle_attack)
-print(cr)
-print(classification_report(results["final_label"], results["attack_label"]))
-end = time.time()
-print(f"Average iterations to perturb image: {results["iterations"]}")
-print(f"Time to test Pixle attack on MNIST neural network: {end-start}")
-model.display_attacked_images(examples)
+# print("Pixle Attack Results")
+# start = time.time()
+# pixle_attack = Pixle(model, device, targeted=False, attack_type=0, max_steps=1, max_patches=20, loss_function=loss_function, optimizer=optimizer)
+# cr, preds, examples, results = model.test_attack_model(loss_function, pixle_attack)
+# print(cr)
+# print(classification_report(results["final_label"], results["attack_label"]))
+# end = time.time()
+# print(f"Average iterations to perturb image: {results["iterations"]}")
+# print(f"Time to test Pixle attack on MNIST neural network: {end-start}")
+# model.display_attacked_images(examples)
 
 
 # print("Results for Feature Squeezing defense")
