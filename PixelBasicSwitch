@@ -21,7 +21,7 @@ def pixleSwitchbasic(image, net):
   swapMe = 0
   counterTwo = 0
   for counterTwo in range(len(indexes)/2):
-    if net(torch.stack((attackedImageR.view(32,32), attackedImageG.view(32,32), attackedImageB.view(32,32)))).argmax(dim=1)[0].item()==origLabel:
+    if net(torch.stack((attackedImageR.view(32,32), attackedImageG.view(32,32), attackedImageB.view(32,32)))).argmax(dim=1)[0].item()!=origLabel:
       break
     #swap pixels of indexes n and length-n
     attackedImageR[indexes[counterTwo][1]] = flatImageR[indexes[1023-counterTwo][1]]
