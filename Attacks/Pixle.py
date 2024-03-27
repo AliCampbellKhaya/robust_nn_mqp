@@ -30,6 +30,52 @@ class Pixle(BaseAttack):
             print("Please enter valid attack type (0-2)")
 
     def forward_basic(self, input, label):
+        # label = label.unsqueeze(0)
+        # image = input.detach().clone()
+        # #image = image[0, :, :, :]
+
+        # flatImageR = image[0].view(-1)
+        # flatImageG = image[1].view(-1)
+        # flatImageB = image[2].view(-1)
+        # #print(flatImageR.shape)
+        # #print(flatImage)
+        # indexes = []
+        # counter = 0
+        # for i in range(len(flatImageR)):
+        #     indexes.append([flatImageR[i] + flatImageG[i] + flatImageB[i], counter])
+        #     counter = counter + 1
+        # #the image is now stored in a multidimensional array where indexes[number][0] is the value of the given pixel and indexes[number][1] is the index of the pixel in the original image
+
+        # #indexes now must be sorted
+        # indexes = sorted(indexes)
+        # #print(indexes)
+        # attackedImageR = flatImageR
+        # attackedImageG = flatImageG
+        # attackedImageB = flatImageB
+        # swapMe = 0
+        # counterTwo = 0
+
+        # for counterTwo in range(len(indexes)):
+        #     if counterTwo % 2 == 0:
+        #         counterTwo = counterTwo + 1
+        #         continue
+
+        #     #swap pixels of indexes n and n-1
+        #     attackedImageR[indexes[counterTwo][1]] = flatImageR[indexes[counterTwo-1][1]]
+        #     attackedImageR[counterTwo-1] = flatImageR[indexes[counterTwo-1][1]]
+        #     attackedImageG[indexes[counterTwo][1]] = flatImageG[indexes[counterTwo-1][1]]
+        #     attackedImageG[counterTwo-1] = flatImageG[indexes[counterTwo-1][1]]
+        #     attackedImageB[indexes[counterTwo][1]] = flatImageB[indexes[counterTwo-1][1]]
+        #     attackedImageB[counterTwo-1] = flatImageB[indexes[counterTwo-1][1]]
+        #     counterTwo = counterTwo + 1
+
+        # attackedImage = torch.stack((attackedImageR.view(32,32), attackedImageG.view(32,32), attackedImageB.view(32,32)))
+        # #print(attackedImage.size())
+        # #print(attackedImage.size())
+        # attackedImage = attackedImage.unsqueeze(0)
+        # attack_label = torch.argmax(self.model(attackedImage))
+        # return attackedImage, label.cpu().numpy().item(), attack_label.detach().cpu().numpy().item(), counterTwo, None
+
         label = label.unsqueeze(0)
         pert_image = input.detach().clone()
         x = pert_image[None, :]

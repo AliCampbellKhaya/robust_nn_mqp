@@ -304,6 +304,7 @@ class BaseNeuralNetwork(nn.Module):
             init_loss.backward()
 
             input_attack_results = attack.forward(inputs, labels)
+            print(input_attack_results[0].size())
 
             attack_pred = self(input_attack_results[0])
             attack_loss = loss_function(attack_pred, labels)

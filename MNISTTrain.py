@@ -38,14 +38,14 @@ pixle_attack = Pixle(model, device, targeted=False, attack_type=0, loss_function
 
 adverserials = AdverserialExamples(ifgsm_attack, cw_attack, deepfool_attack, pixle_attack)
 
-for e in range(epochs):
-    print(f"Epoch {e+1}")
-    history = model.train_model_adverserial_examples(loss_function, optimizer, adverserials)
-    print(history)
-    print("-"*50)
+# for e in range(epochs):
+#     print(f"Epoch {e+1}")
+#     history = model.train_model_adverserial_examples(loss_function, optimizer, adverserials)
+#     print(history)
+#     print("-"*50)
 
-cr, preds = model.test_model(loss_function)
-print(cr)
+# cr, preds = model.test_model(loss_function)
+# print(cr)
 
 for e in range(epochs):
     print(f"Epoch {e+1}")
