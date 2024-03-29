@@ -44,6 +44,7 @@ class CW(BaseAttack):
 
             current_adv = torch.full((1,), fill_value=False)
             previous_loss = 1e10
+            previous_loss_abort = np.inf
 
             #step_const = torch.tensor(x, const)
 
@@ -51,7 +52,11 @@ class CW(BaseAttack):
                 loss, x_pert, x_pert_logits, model_grads = self.optimize(x_tanh, x_from_tanh, delta, const, rows, attack_optimizer)
                 delta -= model_grads
 
-                #TODO: Abort early - all labels convering to 2 or 8 because no abort early
+                #Abort Early
+                if inner_step % (np.ceil(self.max_steps / 5)) == 0:
+                    if not (loss <= 0.9999 * previous_loss_abort):
+                        break
+                    previous_loss_abort = loss
 
                 # change class logits maybe
                 current_adv_iter = x_pert

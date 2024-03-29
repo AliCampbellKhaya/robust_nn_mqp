@@ -7,10 +7,12 @@ TODO: Write comment explaining attack
 """
 
 class IFGSM(BaseAttack):
-    def __init__(self, model, device, targeted, loss_function, optimizer, eps, max_steps):
+    def __init__(self, model, device, targeted, loss_function, optimizer, eps, max_steps, decay, alpha):
         super(IFGSM, self).__init__("IFGSM", model, device, targeted, loss_function, optimizer)
         self.eps = eps
         self.max_steps = max_steps
+        self.decay = decay
+        self.alpha = alpha
 
     def forward_individual(self, input, label):
         x = input[None,:].requires_grad_(True)
@@ -52,3 +54,16 @@ class IFGSM(BaseAttack):
             steps += 1
 
         return x, label.cpu().numpy().item(), attack_label.cpu().numpy().item(), steps, total_pert
+
+    def momentum_forward_individual(self, input, label):
+        x = input[None,:].requires_grad_(True)
+        label = label.unsqueeze(0)
+        shape = x.detach().cpu().numpy().shape
+        steps = 0
+        total_pert = torch.zeros(shape).to(self.device)
+
+        # TODO: Reconsider targeting
+
+        attack_label = label.cpu().numpy().item()
+
+        momentum = torch.zeros(shape).detach().to(self.device)

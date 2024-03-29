@@ -9,12 +9,17 @@ from Attacks.DeepFool import DeepFool
 from Attacks.IFGSM import IFGSM
 from Attacks.Pixle import Pixle
 
+from NeuralNetworks.MNISTNeuralNetwork import MNISTNeuralNetwork
+from NeuralNetworks.CifarNeuralNetwork import CifarNeuralNetwork
+from NeuralNetworks.TrafficNeuralNetwork import TrafficNeuralNetwork
+
+
 """
 TODO: Write Defense
 """
 
 class AdverserialExamples(BaseDefense):
-    def __init__(self, model, device, ifgsm, cw, deepfool, pixle):
+    def __init__(self, model, device, ifgsm, cw, deepfool, pixle, dataset, learning_rate, loss_function):
         super(AdverserialExamples, self).__init__("AE", model, device)
         random.seed(42)
 
@@ -22,6 +27,18 @@ class AdverserialExamples(BaseDefense):
         self.cw = cw
         self.deepfool = deepfool
         self.pixle = pixle
+
+        if dataset == "MNIST":
+            self.model = MNISTNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
+        elif dataset == "Cifar":
+            self.model = CifarNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
+        elif dataset == "Traffic":
+            self.model = TrafficNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
+        else:
+            print("Please select a valid dataset: (MNIST, Cifar, Traffic)")
+
+        self.learning_rate = learning_rate
+        self.loss_function = loss_function
 
     def forward_batch(self, inputs, labels):
         r = random.randint(0, 3)
@@ -39,4 +56,77 @@ class AdverserialExamples(BaseDefense):
             attack_results = self.pixle.forward(inputs, labels)
 
         return attack_results[0]
+    
+    def train_model_adverserial_examples(self, loss_function, optimizer):
+        self.model.train()
+
+        total_train_loss = 0
+        total_val_loss = 0
+
+        total_train_correct = 0
+        total_val_correct = 0
+    
+        for (inputs, labels) in self.model.train_dataloader:
+            (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
+    
+            optimizer.zero_grad()
+
+            inputs_attack = self.forward_batch(inputs, labels)
+        
+            pred = self.model(inputs_attack)
+            loss = loss_function(pred, labels)
+            
+            loss.backward()
+            optimizer.step()
+
+            total_train_loss += loss
+            total_train_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
+
+        with torch.no_grad():
+            self.model.eval()
+
+            for (inputs, labels) in self.model.val_dataloader:
+                (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
+
+                inputs_attack = self.forward_batch(inputs, labels)
+
+                pred = self(inputs_attack)
+                loss = loss_function(pred, labels)
+
+                total_val_loss += loss
+                total_val_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
+
+        # Train and Val Steps
+        avg_train_loss = total_train_loss / ( len(self.model.val_dataloader.dataset) / self.model.batch_size)
+        avg_val_loss = total_val_loss / ( len(self.model.val_dataloader.dataset) / self.model.batch_size)
+
+        train_correct = total_train_correct / len(self.model.train_dataloader.dataset)
+        val_correct = total_val_correct / len(self.model.val_dataloader.dataset)
+
+        self.model.history["train_loss"].append(avg_train_loss.cpu().detach().numpy())
+        self.model.history["train_acc"].append(train_correct)
+        self.model.history["val_loss"].append(avg_val_loss.cpu().detach().numpy())
+        self.model.history["val_acc"].append(val_correct)
+
+        if avg_val_loss.cpu().detach().numpy() <= min(self.history["val_loss"]):
+            self.model.save_defense_model("Adverserial_Defense")
+
+        # Do I need to return the history??
+        return self.model.history
+    
+
+    def test_adverserials(self, loss_function):
+        self.model.load_defense_model("Adverserial_Defense")
+
+        cr, preds, examples = self.model.test_model(loss_function)
+
+        return cr, preds, examples
+    
+    def test_attack_distillation(self, loss_function, attack):
+        self.model.load_defense_model("Adverserial_Defense")
+
+        cr, preds, examples, results = self.model.test_attack_model(loss_function, attack)
+
+        return cr, preds, examples, results
+
             

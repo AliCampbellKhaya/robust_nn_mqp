@@ -1,5 +1,4 @@
 import torch
-import itertools as it
 
 class BaseAttack():
     def __init__(self, name, model, device, targeted, loss_function, optimizer):

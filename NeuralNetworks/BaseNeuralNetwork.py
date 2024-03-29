@@ -5,8 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 
-from Defenses import AdverserialExamples
-
 class BaseNeuralNetwork(nn.Module):
     def __init__(self, dataset_name, device, num_channels, num_features, num_out_features, batch_size, train_dataloader, val_dataloader, test_dataloader, test_data):
         super(BaseNeuralNetwork, self).__init__()
@@ -134,63 +132,7 @@ class BaseNeuralNetwork(nn.Module):
 
         return self.history
     
-    # TODO: Fix
-    def train_model_adverserial_examples(self, loss_function, optimizer, adverserial_examples):
-        self.train()
-
-        total_train_loss = 0
-        total_val_loss = 0
-
-        total_train_correct = 0
-        total_val_correct = 0
     
-        for (inputs, labels) in self.train_dataloader:
-            (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
-    
-            optimizer.zero_grad()
-
-            inputs_attack = adverserial_examples.forward_batch(inputs, labels)
-        
-            pred = self(inputs_attack)
-            loss = loss_function(pred, labels)
-            
-            loss.backward()
-            optimizer.step()
-
-            total_train_loss += loss
-            total_train_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
-
-        with torch.no_grad():
-            self.eval()
-
-            for (inputs, labels) in self.val_dataloader:
-                (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
-
-                inputs_attack = adverserial_examples.forward_batch(inputs, labels)
-
-                pred = self(inputs_attack)
-                loss = loss_function(pred, labels)
-
-                total_val_loss += loss
-                total_val_correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
-
-        # Train and Val Steps
-        avg_train_loss = total_train_loss / ( len(self.val_dataloader.dataset) / self.batch_size)
-        avg_val_loss = total_val_loss / ( len(self.val_dataloader.dataset) / self.batch_size)
-
-        train_correct = total_train_correct / len(self.train_dataloader.dataset)
-        val_correct = total_val_correct / len(self.val_dataloader.dataset)
-
-        # self.history["train_loss"].append(avg_train_loss.cpu().detach().numpy())
-        # self.history["train_acc"].append(train_correct)
-        # self.history["val_loss"].append(avg_val_loss.cpu().detach().numpy())
-        # self.history["val_acc"].append(val_correct)
-
-        if avg_val_loss.cpu().detach().numpy() <= min(self.history["val_loss"]):
-            self.save_defense_model("Adverserial_Defense")
-
-        # Do I need to return the history??
-        return self.history
     
     def train_model_distiller(self, loss_function, optimizer):
         self.train()
@@ -266,9 +208,6 @@ class BaseNeuralNetwork(nn.Module):
             if len(examples) < 5:
                 examples.append( (pred, inputs.squeeze().detach().cpu()) )
 
-            break
-            print("iter")
-
         # TODO: Fix classification
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
@@ -304,7 +243,6 @@ class BaseNeuralNetwork(nn.Module):
             init_loss.backward()
 
             input_attack_results = attack.forward(inputs, labels)
-            print(input_attack_results[0].size())
 
             attack_pred = self(input_attack_results[0])
             attack_loss = loss_function(attack_pred, labels)
@@ -328,8 +266,7 @@ class BaseNeuralNetwork(nn.Module):
                 #examples.append( (results["original_image"][i], results["final_label"][i], results["pert_image"][i].squeeze().detach().cpu()) )
                 examples.append( (init_pred, attack_pred, input_attack_results[0].squeeze().detach().cpu()) )
 
-            break
-            print("iter")
+            #break
 
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
@@ -372,14 +309,12 @@ class BaseNeuralNetwork(nn.Module):
             if len(examples) < 5:
                 examples.append( (init_pred, attack_pred, input_defense.squeeze().detach().cpu()) )
 
-            break
-
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
 
         # Preds are the array of probability percentage
         return cr, preds, examples
-    
+        
     def test_baseline_defense_model(self, loss_function, defense):
         self.eval()
     

@@ -32,26 +32,26 @@ optimizer = torch.optim.Adam(model.parameters(), learning_rate)
 
 model.load_model()
 
-# ifgsm_attack = IFGSM(model, device, targeted=False, loss_function=loss_function, optimizer=optimizer, eps=0.1, max_steps=20)
-# cw_attack = CW(model, device, targeted=False, search_steps=5, max_steps=20, confidence=0, lr=learning_rate, loss_function=loss_function, optimizer=optimizer)
-# deepfool_attack = DeepFool(model, device, targeted=False, step=0.02, max_iter=1000, loss_function=loss_function, optimizer=optimizer)
-# pixle_attack = Pixle(model, device, targeted=False, attack_type=0, loss_function=loss_function, optimizer=optimizer)
+ifgsm_attack = IFGSM(model, device, targeted=False, loss_function=loss_function, optimizer=optimizer, eps=0.1, max_steps=20)
+cw_attack = CW(model, device, targeted=False, search_steps=5, max_steps=20, confidence=0, lr=learning_rate, loss_function=loss_function, optimizer=optimizer)
+deepfool_attack = DeepFool(model, device, targeted=False, step=0.02, max_iter=1000, loss_function=loss_function, optimizer=optimizer)
+pixle_attack = Pixle(model, device, targeted=False, attack_type=0, loss_function=loss_function, optimizer=optimizer, max_steps=0, max_patches=0)
 
-# adverserials = AdverserialExamples(ifgsm_attack, cw_attack, deepfool_attack, pixle_attack)
+adverserials = AdverserialExamples(model=None, device=device, ifgsm=ifgsm_attack, cw=cw_attack, deepfool=deepfool_attack, pixle=pixle_attack, dataset="MNIST", learning_rate=learning_rate, loss_function=loss_function)
 
-# for e in range(epochs):
-#     print(f"Epoch {e+1}")
-#     history = model.train_model_adverserial_examples(loss_function, optimizer, adverserials)
-#     print(history)
-#     print("-"*50)
-
-# cr, preds = model.test_model(loss_function)
-# print(cr)
-
-mnist_distiller = Distiller(model, device, "MNIST", learning_rate, loss_function)
 for e in range(epochs):
     print(f"Epoch {e+1}")
-    teacher_history, student_history = mnist_distiller.train_distillation()
-    print(teacher_history)
-    print(student_history)
+    history = adverserials.train_model_adverserial_examples(loss_function, optimizer)
+    print(history)
     print("-"*50)
+
+cr, preds = adverserials.test_model(loss_function)
+print(cr)
+
+# mnist_distiller = Distiller(model, device, "MNIST", learning_rate, loss_function)
+# for e in range(epochs):
+#     print(f"Epoch {e+1}")
+#     teacher_history, student_history = mnist_distiller.train_distillation()
+#     print(teacher_history)
+#     print(student_history)
+#     print("-"*50)
