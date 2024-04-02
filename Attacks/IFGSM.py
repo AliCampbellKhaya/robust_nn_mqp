@@ -16,6 +16,7 @@ class IFGSM(BaseAttack):
 
     def forward_individual(self, input, label):
         x = input[None,:].requires_grad_(True)
+        adv_x = x.detach().clone()
         label = label.unsqueeze(0)
         shape = x.detach().cpu().numpy().shape
         steps = 0
@@ -24,6 +25,7 @@ class IFGSM(BaseAttack):
         # TODO: Reconsider targeting
 
         attack_label = label.cpu().numpy().item()
+        momentum = torch.zeros(shape).to(self.device)
 
         while attack_label == label.cpu().numpy().item() and steps < self.max_steps:
 
@@ -40,11 +42,16 @@ class IFGSM(BaseAttack):
             loss.backward(retain_graph=True)
 
             x_grad = x.grad.data
+            x_grad = x_grad / torch.mean(torch.abs(x_grad), dim=(1, 2, 3), keepdim=True)
+            x_grad = x_grad + momentum * self.decay
+
+            momentum = x_grad
             sign_data_grad = x_grad.sign()
 
-            total_pert = total_pert + self.eps * sign_data_grad
-            x = x + self.eps * sign_data_grad
-            x = torch.clamp(x, 0, 1)
+            total_pert = total_pert + self.alpha * sign_data_grad
+            adv_x = adv_x.detach() + self.alpha * sign_data_grad
+            delta = torch.clamp(adv_x - x, min=-self.eps, max=self.eps)
+            x = torch.clamp(x + delta, 0, 1)
 
             x.requires_grad_(True).retain_grad()
 
@@ -54,16 +61,3 @@ class IFGSM(BaseAttack):
             steps += 1
 
         return x, label.cpu().numpy().item(), attack_label.cpu().numpy().item(), steps, total_pert
-
-    def momentum_forward_individual(self, input, label):
-        x = input[None,:].requires_grad_(True)
-        label = label.unsqueeze(0)
-        shape = x.detach().cpu().numpy().shape
-        steps = 0
-        total_pert = torch.zeros(shape).to(self.device)
-
-        # TODO: Reconsider targeting
-
-        attack_label = label.cpu().numpy().item()
-
-        momentum = torch.zeros(shape).detach().to(self.device)

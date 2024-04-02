@@ -207,10 +207,12 @@ class BaseNeuralNetwork(nn.Module):
             # TODO: Fix example generator
             if len(examples) < 5:
                 examples.append( (pred, inputs.squeeze().detach().cpu()) )
+            else:
+                break
 
         # TODO: Fix classification
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
-        cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
+        cr = classification_report(np.array(preds_true), np.array(preds), zero_division=0.0) # target_names =
 
         # Preds are the array of probability percentage
         return cr, preds, examples
@@ -265,17 +267,72 @@ class BaseNeuralNetwork(nn.Module):
             #for i in range(5):
                 #examples.append( (results["original_image"][i], results["final_label"][i], results["pert_image"][i].squeeze().detach().cpu()) )
                 examples.append( (init_pred, attack_pred, input_attack_results[0].squeeze().detach().cpu()) )
-
-            #break
+            else:
+                break
 
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
-        cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
+        cr = classification_report(np.array(preds_true), np.array(preds), zero_division=0.0) # target_names =
         #cr = classification_report(results["final_label"], results["attack_label"])
 
         # Preds are the array of probability percentage
         return cr, preds, examples, results
     
     def test_defense_model(self, loss_function, attack, defense):
+        self.eval()
+
+        total_test_loss = 0
+        total_test_correct = 0
+        preds = []
+        preds_true = []
+        examples = []
+
+        results = {
+            "defended_image": [],
+            "final_label": [],
+            "attack_label": [],
+            "original_image": []
+        }
+
+        for (inputs, labels) in self.test_dataloader:
+            (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
+
+            init_pred = self(inputs)
+            init_loss = loss_function(init_pred, labels)
+
+            self.zero_grad()
+            init_loss.backward()
+
+            input_attack = attack.forward(inputs, labels)
+            input_defense = defense.forward(input_attack[0], labels)
+
+            #attack_pred = self(torch.from_numpy(input_defense).float())
+            attack_pred = self(input_defense[0])
+            attack_loss = loss_function(attack_pred, labels)
+
+            total_test_loss += attack_loss
+            total_test_correct += (attack_pred.argmax(1) == labels).type(torch.float).sum().item()
+
+            preds.extend(attack_pred.argmax(axis=1).cpu().numpy())
+            preds_true.extend(labels.cpu().numpy())
+
+            # results["defended_image"] += input_defense[1]
+            # results["final_label"] += attack_pred.detach().cpu().numpy()
+            # results["attack_label"] += input_attack[1]["attack_label"]
+            # results["original_image"] += input_attack[1]["original_image"]
+
+            if len(examples) < 5:
+                examples.append( (init_pred, attack_pred, input_defense[0].squeeze().detach().cpu()) )
+
+            else:
+                break
+
+        #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
+        cr = classification_report(np.array(preds_true), np.array(preds), zero_division=0.0) # target_names =
+
+        # Preds are the array of probability percentage
+        return cr, preds, examples, results
+        
+    def test_baseline_defense_model(self, loss_function, defense):
         self.eval()
 
         total_test_loss = 0
@@ -293,11 +350,10 @@ class BaseNeuralNetwork(nn.Module):
             self.zero_grad()
             init_loss.backward()
 
-            input_attack = attack.forward(inputs, labels)
-            input_defense = defense.forward(input_attack[0], labels)
+            input_defense = defense.forward(inputs, labels)
 
             #attack_pred = self(torch.from_numpy(input_defense).float())
-            attack_pred = self(input_defense)
+            attack_pred = self(input_defense[0])
             attack_loss = loss_function(attack_pred, labels)
 
             total_test_loss += attack_loss
@@ -307,16 +363,16 @@ class BaseNeuralNetwork(nn.Module):
             preds_true.extend(labels.cpu().numpy())
 
             if len(examples) < 5:
-                examples.append( (init_pred, attack_pred, input_defense.squeeze().detach().cpu()) )
+                examples.append( (init_pred, attack_pred, input_defense[0].squeeze().detach().cpu()) )
+
+            else:
+                break
 
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
-        cr = classification_report(np.array(preds_true), np.array(preds)) # target_names =
+        cr = classification_report(np.array(preds_true), np.array(preds), zero_division=0.0) # target_names =
 
         # Preds are the array of probability percentage
         return cr, preds, examples
-        
-    def test_baseline_defense_model(self, loss_function, defense):
-        self.eval()
     
     def generate_example_images(self):
         pass

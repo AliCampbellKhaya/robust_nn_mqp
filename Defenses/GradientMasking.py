@@ -8,16 +8,18 @@ TODO: Write Defense / Update defense and see what is going on here
 """
 
 class GradientMasking(BaseDefense):
-    def __init__(self, model, loss_function, epsilon):
-        super(GradientMasking, self).__init__("GM", model)
+    def __init__(self, model, device, loss_function, epsilon):
+        super(GradientMasking, self).__init__("GM", model, device)
         self.loss_function = loss_function
         self.epsilon = epsilon
 
-    def forward(self, input, labels):
+    def forward_individual(self, input, label):
         input.requires_grad_(True)
+        input = input.unsqueeze(0)
+        label = label.unsqueeze(0)
         outputs = self.model(input)
 
-        loss = self.loss_function(outputs, labels)
+        loss = self.loss_function(outputs, label)
         loss.backward()
 
         # Add random noise to the gradients

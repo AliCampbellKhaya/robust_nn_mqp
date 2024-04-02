@@ -45,13 +45,13 @@ for e in range(epochs):
     print(history)
     print("-"*50)
 
-cr, preds = adverserials.test_model(loss_function)
+cr, preds = adverserials.test_adverserials(loss_function)
 print(cr)
 
-# mnist_distiller = Distiller(model, device, "MNIST", learning_rate, loss_function)
-# for e in range(epochs):
-#     print(f"Epoch {e+1}")
-#     teacher_history, student_history = mnist_distiller.train_distillation()
-#     print(teacher_history)
-#     print(student_history)
-#     print("-"*50)
+mnist_distiller = Distiller(model, device, "MNIST", learning_rate, loss_function)
+for e in range(epochs):
+    print(f"Epoch {e+1}")
+    teacher_history, student_history = mnist_distiller.train_distillation()
+    print(teacher_history)
+    print(student_history)
+    print("-"*50)

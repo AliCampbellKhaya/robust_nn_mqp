@@ -12,12 +12,13 @@ TODO: Write comment explaining attack
 """
 
 class CW(BaseAttack):
-    def __init__(self, model, device, targeted, search_steps, max_steps, confidence, lr, loss_function, optimizer):
+    def __init__(self, model, device, targeted, search_steps, max_steps, confidence, lr, loss_function, optimizer, targets):
         super(CW, self).__init__("CW", model, device, targeted, loss_function, optimizer)
         self.search_steps = search_steps
         self.max_steps = max_steps
         self.confidence = confidence
         self.lr = lr  
+        self.targets = targets
 
     def forward_individual(self, input, label):
         x = input[None, :].requires_grad_(True)
@@ -37,7 +38,7 @@ class CW(BaseAttack):
 
         for outer_step in range(self.search_steps):
             if outer_step == self.search_steps - 1 and self.search_steps >= 10:
-                const = torch.minimum(upper_bound_const, 1e10)
+                const = upper_bound_const
 
             delta = torch.zeros_like(x_tanh)
             attack_optimizer = optim.Adam([delta], lr=self.lr)
@@ -107,10 +108,11 @@ class CW(BaseAttack):
 
         logits = self.model.forward_omit_softmax(x)
         one_hot_like = torch.eye(logits.size(dim=1))
-        one_hot_like[self.model.test_data.targets] = 1e10
+        #one_hot_like[self.model.test_data.targets] = 1e10
+        one_hot_like[self.targets] = 1e10
         other_logits = torch.argmax((logits - one_hot_like), axis=-1)
 
-        c_min = self.model.test_data.targets
+        c_min = self.targets
         c_max = torch.argmax(other_logits, axis=-1)
 
         adv_loss = logits[rows, c_min] - logits[rows, c_max]

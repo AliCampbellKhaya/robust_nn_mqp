@@ -1,221 +1,727 @@
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
+import torch.optim as optim
 import time
+import numpy as np
 
 from NeuralNetworks.MNISTNeuralNetwork import MNISTNeuralNetwork
 from NeuralNetworks.CifarNeuralNetwork import CifarNeuralNetwork
 from NeuralNetworks.TrafficNeuralNetwork import TrafficNeuralNetwork
 
-from torchvision import datasets
-from torchvision.transforms import v2
-from torch.utils.data import random_split
-from torch.utils.data import DataLoader
+from Attacks.IFGSM import IFGSM
+from Attacks.DeepFool import DeepFool
+from Attacks.CW import CW
+from Attacks.Pixle import Pixle
 
-batch_size = 64
+from Defenses.AdverserialExamples import AdverserialExamples
+from Defenses.FeatureSqueezing import FeatureSqueezing
+from Defenses.GradientMasking import GradientMasking
+from Defenses.Distiller import Distiller
 
-CNN_MEAN = [0.485, 0.456, 0.406]
-CNN_STD = [0.229, 0.224, 0.225]
-transforms = v2.Compose([
-    v2.ToImage(),
-    v2.ToDtype(torch.float32, scale=True),
-    v2.Normalize(mean=CNN_MEAN, std=CNN_STD),
-    # resize(32, 32)
-    v2.Resize((128, 128), antialias=True),
-])
+print("MNIST Tests")
 
-train_data = datasets.GTSRB(root="data", split="train", download=True, transform=transforms)
-test_data = datasets.GTSRB(root="data", split="test", download=True, transform=transforms)
+device = torch.device("cpu")
+mnist_model = MNISTNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
 
-train_dataloader = DataLoader(train_data, batch_size=batch_size)
-test_dataloader = DataLoader(test_data, batch_size=batch_size)
+learning_rate = 1e-4
+loss_function = nn.NLLLoss()
+mnist_optimizer = optim.Adam(mnist_model.parameters(), learning_rate)
 
-images = {}
-added_images = []
+mnist_model.load_model()
 
-count = 0
-for (inputs, labels) in test_dataloader:
-    for input, label in zip(inputs, labels):
-        label = label.cpu().numpy().item()
+print("Baseline well trained MNIST model")
+start = time.time()
+cr, preds, examples = mnist_model.test_model(loss_function)
+end = time.time()
+print(cr)
+print(f"Time to test baseline MNIST model: {end-start}")
 
-        if label not in added_images:
+print("-" * 50)
 
-            #images[label] = input
-            images[count] = input
-            added_images.append(label)
-            count += 1
-    
-    if len(added_images) > 10:
-        break
+print("IFGSM Attack Results on MNIST")
+ifgsm_attack = IFGSM(mnist_model, device, targeted=False, loss_function=loss_function, optimizer=mnist_optimizer, eps=0.1, max_steps=20, decay=1, alpha=0.01)
+start = time.time()
+cr, preds, examples, results = mnist_model.test_attack_model(loss_function, ifgsm_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform IFGSM: {np.mean(results["iterations"])}")
+print(f"Time to test IFGSM: {end-start}")
 
-# for i in range(10):
-#     fig, axs = plt.subplots(10, 1)
-#     axs[i].plot(images[i][0, :, :])
-#     axs[i].set_title(i)
-#     plt.axis("off")
+print("-" * 50)
 
-# plt.show()
+print("Deepfool Attack Results on MNIST")
+deepfool_attack = DeepFool(mnist_model, device, targeted=False, step=0.02, max_iter=1000, loss_function=loss_function, optimizer=mnist_optimizer)
+start = time.time()
+cr, preds, examples, results = mnist_model.test_attack_model(loss_function, deepfool_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Deepfool: {np.mean(results["iterations"])}")
+print(f"Time to test Deepfool: {end-start}")
 
-fig, axs = plt.subplots(10, 1, figsize=(8, 20))
+print("-" * 50)
 
-# Loop through each subplot
-for i, ax in enumerate(axs):
-    # Plot data on each subplot
-    if i == 4:
-        ax.imshow(images[13].permute(1, 2, 0).numpy())
-    else: 
-        ax.imshow(images[i].permute(1, 2, 0).numpy())
+mnist_targets = []
+for _, target in mnist_model.test_data:
+    mnist_targets.append(target)
 
-    ax.axis('off')
+mnist_targets = torch.tensor(mnist_targets)
 
-# Adjust layout
-plt.tight_layout()
+print("CW Attack Results on MNIST")
+cw_attack = CW(mnist_model, device, targeted=False, search_steps=5, max_steps=20, confidence=0, lr=learning_rate, loss_function=loss_function, optimizer=mnist_optimizer, targets=mnist_targets)
+start = time.time()
+cr, preds, examples, results = mnist_model.test_attack_model(loss_function, cw_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform CW: {np.mean(results["iterations"])}")
+print(f"Time to test CW: {end-start}")
 
-# Show the plot
-plt.show()
-    
+print("-" * 50)
 
-""" MNIST Data """
+print("Pixle Attack Results on MNIST")
+pixle_attack = Pixle(mnist_model, device, targeted=False, attack_type=0, loss_function=loss_function, optimizer=mnist_optimizer, max_steps=0, max_patches=0)
+start = time.time()
+cr, preds, examples, results = mnist_model.test_attack_model(loss_function, pixle_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Pixle: {np.mean(results["iterations"])}")
+print(f"Time to test Pixle: {end-start}")
 
-# from NeuralNetworks.MNISTNeuralNetwork import MNISTNeuralNetwork
+print("-" * 50)
 
-# device = torch.device("cpu")
-# model = MNISTNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
+print("Adversarial Example MNIST model")
+adverserials = AdverserialExamples(model=None, device=device, ifgsm=ifgsm_attack, cw=cw_attack, deepfool=deepfool_attack, pixle=pixle_attack, dataset="MNIST", learning_rate=learning_rate, loss_function=loss_function)
+print("Baseline MNIST AE")
+start = time.time()
+cr, preds, examples = adverserials.test_adverserials(loss_function)
+end = time.time()
+print(cr)
+print(f"Time to test baseline AE Model: {end-start}")
 
-# model.load_model()
+print("IFGSM Attack results on AE Model")
+start = time.time()
+cr, preds, examples, results = adverserials.test_attack_adversarials(loss_function, ifgsm_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform IFGSM on AE Model: {np.mean(results["iterations"])}")
+print(f"Time to test IFGSM: {end-start}")
 
-# images = {}
-# added_images = []
+print("Deepfool Attack results on AE Model")
+start = time.time()
+cr, preds, examples, results = adverserials.test_attack_adversarials(loss_function, deepfool_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Deepfool on AE Model: {np.mean(results["iterations"])}")
+print(f"Time to test Deepfool: {end-start}")
 
-# for inputs, labels in model.test_dataloader:
+print("CW Attack results on AE Model")
+start = time.time()
+cr, preds, examples, results = adverserials.test_attack_adversarials(loss_function, cw_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform CW on AE Model: {np.mean(results["iterations"])}")
+print(f"Time to test CW: {end-start}")
 
-#     for input, label in zip(inputs, labels):
-#         label = label.cpu().numpy().item()
+print("Pixle Attack results on AE Model")
+start = time.time()
+cr, preds, examples, results = adverserials.test_attack_adversarials(loss_function, pixle_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Pixle on AE Model: {np.mean(results["iterations"])}")
+print(f"Time to test Pixle: {end-start}")
 
-#         if label not in added_images:
+print("-" * 50)
 
-#             images[label] = input
-#             added_images.append(label)
-    
-#     if len(added_images) > 10:
-#         break
+print("Results for Feature Squeezing defense on MNIST")
+fs_defense = FeatureSqueezing(mnist_model, device)
+print("Baseline FS MNIST")
+start = time.time()
+cr, preds, examples = mnist_model.test_baseline_defense_model(loss_function, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test baseline: {end-start}")
 
-# for i in range(10):
-#     plt.subplot(1, 10, i+1)
-#     plt.imshow(images[i][0, :, :], cmap='gray')
-#     plt.title(i)
-#     plt.axis("off")
+print("IFGSM Attack results on FS Model")
+start = time.time()
+cr, preds, examples, results = mnist_model.test_defense_model(loss_function, ifgsm_attack, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test IFGSM: {end-start}")
 
-# plt.tight_layout()
-# plt.show()
+print("Deepfool Attack results on FS Model")
+start = time.time()
+cr, preds, examples, results = mnist_model.test_defense_model(loss_function, deepfool_attack, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test Deepfool: {end-start}")
 
-# """ CIFAR Data """
+print("CW Attack results on FS Model")
+start = time.time()
+cr, preds, examples, results = mnist_model.test_defense_model(loss_function, cw_attack, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test CW: {end-start}")
 
-# device = torch.device("cpu")
-# model = CifarNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
+print("Pixle Attack results on FS Model")
+start = time.time()
+cr, preds, examples, results = mnist_model.test_defense_model(loss_function, pixle_attack, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test Pixle: {end-start}")
 
-# model.load_model()
+print("-" * 50)
 
-# images = {}
-# added_images = []
-# classes_labels = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
+print("Results for Gradient Masking defense on MNIST")
+gm_defense = GradientMasking(mnist_model, device, loss_function, 0.2)
+print("Baseline GM MNIST")
+start = time.time()
+cr, preds, examples = mnist_model.test_baseline_defense_model(loss_function, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test baseline: {end-start}")
 
-# for inputs, labels in model.test_dataloader:
+print("IFGSM Attack results on GM Model")
+start = time.time()
+cr, preds, examples, results = mnist_model.test_defense_model(loss_function, ifgsm_attack, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test IFGSM: {end-start}")
 
-#     for input, label in zip(inputs, labels):
-#         label = label.cpu().numpy().item()
+print("Deepfool Attack results on GM Model")
+start = time.time()
+cr, preds, examples, results = mnist_model.test_defense_model(loss_function, deepfool_attack, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test Deepfool: {end-start}")
 
-#         if label not in added_images:
+print("CW Attack results on GM Model")
+start = time.time()
+cr, preds, examples, results = mnist_model.test_defense_model(loss_function, cw_attack, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test CW: {end-start}")
 
-#             images[label] = input
-#             added_images.append(label)
-    
-#     if len(added_images) > 10:
-#         break
+print("Pixle Attack results on GM Model")
+start = time.time()
+cr, preds, examples, results = mnist_model.test_defense_model(loss_function, pixle_attack, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test Pixle: {end-start}")
 
-# for i in range(10):
-#     plt.subplot(1, 10, i+1)
-#     plt.imshow(images[i].permute(1, 2, 0))
-#     plt.title(classes_labels[i])
-#     plt.axis("off")
+print("-" * 50)
 
-# #plt.tight_layout()
-# plt.show()
+print("Results for Distillation Defence on MNIST")
+mnist_distiller = Distiller(mnist_model, device, "MNIST", learning_rate, loss_function)
+print("Baseline Distilled MNIST")
+start = time.time()
+cr, preds, examples = mnist_distiller.test_distillation()
+end = time.time()
+print(cr)
+print(f"Average time to test baseline: {end-start}")
 
+print("IFGSM Attack results on Distilled Model")
+start = time.time()
+cr, preds, examples, results = mnist_distiller.test_attack_adversarials(ifgsm_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform IFGSM on Distilled Model: {np.mean(results["iterations"])}")
+print(f"Time to test IFGSM: {end-start}")
 
-""" Traffic Data """
+print("Deepfool Attack results on Distilled Model")
+start = time.time()
+cr, preds, examples, results = mnist_distiller.test_attack_adversarials(deepfool_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Deepfool on Distilled Model: {np.mean(results["iterations"])}")
+print(f"Time to test Deepfool: {end-start}")
 
-# device = torch.device("cpu")
-# model = TrafficNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
+print("CW Attack results on Distilled Model")
+start = time.time()
+cr, preds, examples, results = mnist_distiller.test_attack_adversarials(cw_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform CW on Distilled Model: {np.mean(results["iterations"])}")
+print(f"Time to test CW: {end-start}")
 
-# model.load_model()
+print("Pixle Attack results on Distilled Model")
+start = time.time()
+cr, preds, examples, results = mnist_distiller.test_attack_adversarials(pixle_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Pixle on Distilled Model: {np.mean(results["iterations"])}")
+print(f"Time to test Pixle: {end-start}")
 
-# images = {}
-# added_images = []
-# #classes_labels = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
+print("-" * 50)
+print("-" * 50)
+print("-" * 50)
 
-# for inputs, labels in model.test_dataloader:
+print("Cifar Tests")
 
-#     for input, label in zip(inputs, labels):
-#         label = label.cpu().numpy().item()
+device = torch.device("cpu")
+cifar_model = CifarNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
 
-#         if label not in added_images:
+learning_rate = 1e-4
+loss_function = nn.NLLLoss()
+cifar_optimizer = optim.Adam(cifar_model.parameters(), learning_rate)
 
-#             images[label] = input
-#             added_images.append(label)
-    
-#     if len(added_images) > 10:
-#         break
+cifar_model.load_model()
 
-# print(len(added_images))
-# print(added_images)
+print("Baseline well trained Cifar model")
+start = time.time()
+cr, preds, examples = cifar_model.test_model(loss_function)
+end = time.time()
+print(cr)
+print(f"Time to test baseline Cifar model: {end-start}")
 
-# for i in range(10):
-#     plt.subplot(1, 10, i+1)
-#     plt.imshow(images[i].permute(1, 2, 0))
-#     #plt.title(classes_labels[i])
-#     plt.axis("off")
+print("-" * 50)
 
-# #plt.tight_layout()
-# plt.show()
+print("IFGSM Attack Results on Cifar")
+ifgsm_attack = IFGSM(cifar_model, device, targeted=False, loss_function=loss_function, optimizer=cifar_optimizer, eps=0.1, max_steps=20, decay=1, alpha=0.01)
+start = time.time()
+cr, preds, examples, results = cifar_model.test_attack_model(loss_function, ifgsm_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform IFGSM: {np.mean(results["iterations"])}")
+print(f"Time to test IFGSM: {end-start}")
 
-# device = torch.device("cpu")
+print("-" * 50)
 
-# mnist_model = MNISTNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
-# mnist_model.load_model()
+print("Deepfool Attack Results on Cifar")
+deepfool_attack = DeepFool(cifar_model, device, targeted=False, step=0.02, max_iter=1000, loss_function=loss_function, optimizer=cifar_optimizer)
+start = time.time()
+cr, preds, examples, results = mnist_model.test_attack_model(loss_function, deepfool_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Deepfool: {np.mean(results["iterations"])}")
+print(f"Time to test Deepfool: {end-start}")
 
-# cifar_model = CifarNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
-# cifar_model.load_model()
+print("-" * 50)
 
-# traffic_model = TrafficNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
-# traffic_model.load_model()
+cifar_targets = []
+for _, target in cifar_model.test_data:
+    cifar_targets.append(target)
 
-# # Between 1e-3 and 1e-5
-# learning_rate = 1e-4
-# epochs = 5
-# loss_function = nn.NLLLoss()
-# #optimizer = torch.optim.Adam(model.parameters(), learning_rate)
+cifar_targets = torch.tensor(cifar_targets)
 
-# print("Initial results for trained MNIST neural network")
-# start = time.time()
-# cr, preds, examples = mnist_model.test_model(loss_function)
-# print(cr)
-# end = time.time()
-# print(f"Time to test MNIST neural network: {end-start}")
-# mnist_model.display_images(examples)
+print("CW Attack Results on Cifar")
+cw_attack = CW(cifar_model, device, targeted=False, search_steps=5, max_steps=20, confidence=0, lr=learning_rate, loss_function=loss_function, optimizer=cifar_optimizer, targets=cifar_targets)
+start = time.time()
+cr, preds, examples, results = mnist_model.test_attack_model(loss_function, cw_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform CW: {np.mean(results["iterations"])}")
+print(f"Time to test CW: {end-start}")
 
-# print("Initial results for trained Cifar neural network")
-# start = time.time()
-# cr, preds, examples = cifar_model.test_model(loss_function)
-# print(cr)
-# end = time.time()
-# print(f"Time to test MNIST neural network: {end-start}")
-# cifar_model.display_images(examples)
+print("-" * 50)
 
-# print("Initial results for trained Traffic neural network")
-# start = time.time()
-# cr, preds, examples = traffic_model.test_model(loss_function)
-# print(cr)
-# end = time.time()
-# print(f"Time to test MNIST neural network: {end-start}")
-# traffic_model.display_images(examples)
+print("Pixle Attack Results on Cifar")
+pixle_attack = Pixle(cifar_model, device, targeted=False, attack_type=0, loss_function=loss_function, optimizer=cifar_optimizer, max_steps=0, max_patches=0)
+start = time.time()
+cr, preds, examples, results = mnist_model.test_attack_model(loss_function, pixle_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Pixle: {np.mean(results["iterations"])}")
+print(f"Time to test Pixle: {end-start}")
+
+print("-" * 50)
+
+print("Adversarial Example Cifar model")
+adverserials = AdverserialExamples(model=None, device=device, ifgsm=ifgsm_attack, cw=cw_attack, deepfool=deepfool_attack, pixle=pixle_attack, dataset="Cifar", learning_rate=learning_rate, loss_function=loss_function)
+print("Baseline MNIST AE")
+start = time.time()
+cr, preds, examples = adverserials.test_adverserials(loss_function)
+end = time.time()
+print(cr)
+print(f"Time to test baseline AE Model: {end-start}")
+
+print("IFGSM Attack results on AE Model")
+start = time.time()
+cr, preds, examples, results = adverserials.test_attack_adversarials(loss_function, ifgsm_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform IFGSM on AE Model: {np.mean(results["iterations"])}")
+print(f"Time to test IFGSM: {end-start}")
+
+print("Deepfool Attack results on AE Model")
+start = time.time()
+cr, preds, examples, results = adverserials.test_attack_adversarials(loss_function, deepfool_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Deepfool on AE Model: {np.mean(results["iterations"])}")
+print(f"Time to test Deepfool: {end-start}")
+
+print("CW Attack results on AE Model")
+start = time.time()
+cr, preds, examples, results = adverserials.test_attack_adversarials(loss_function, cw_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform CW on AE Model: {np.mean(results["iterations"])}")
+print(f"Time to test CW: {end-start}")
+
+print("Pixle Attack results on AE Model")
+start = time.time()
+cr, preds, examples, results = adverserials.test_attack_adversarials(loss_function, pixle_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Pixle on AE Model: {np.mean(results["iterations"])}")
+print(f"Time to test Pixle: {end-start}")
+
+print("-" * 50)
+
+print("Results for Feature Squeezing defense on MNIST")
+fs_defense = FeatureSqueezing(cifar_model, device)
+print("Baseline FS MNIST")
+start = time.time()
+cr, preds, examples = cifar_model.test_baseline_defense_model(loss_function, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test baseline: {end-start}")
+
+print("IFGSM Attack results on FS Model")
+start = time.time()
+cr, preds, examples, results = cifar_model.test_defense_model(loss_function, ifgsm_attack, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test IFGSM: {end-start}")
+
+print("Deepfool Attack results on FS Model")
+start = time.time()
+cr, preds, examples, results = cifar_model.test_defense_model(loss_function, deepfool_attack, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test Deepfool: {end-start}")
+
+print("CW Attack results on FS Model")
+start = time.time()
+cr, preds, examples, results = cifar_model.test_defense_model(loss_function, cw_attack, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test CW: {end-start}")
+
+print("Pixle Attack results on FS Model")
+start = time.time()
+cr, preds, examples, results = cifar_model.test_defense_model(loss_function, pixle_attack, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test Pixle: {end-start}")
+
+print("-" * 50)
+
+print("Results for Gradient Masking defense on MNIST")
+gm_defense = GradientMasking(cifar_model, device, loss_function, 0.2)
+print("Baseline GM MNIST")
+start = time.time()
+cr, preds, examples = cifar_model.test_baseline_defense_model(loss_function, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test baseline: {end-start}")
+
+print("IFGSM Attack results on GM Model")
+start = time.time()
+cr, preds, examples, results = cifar_model.test_defense_model(loss_function, ifgsm_attack, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test IFGSM: {end-start}")
+
+print("Deepfool Attack results on GM Model")
+start = time.time()
+cr, preds, examples, results = cifar_model.test_defense_model(loss_function, deepfool_attack, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test Deepfool: {end-start}")
+
+print("CW Attack results on GM Model")
+start = time.time()
+cr, preds, examples, results = cifar_model.test_defense_model(loss_function, cw_attack, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test CW: {end-start}")
+
+print("Pixle Attack results on GM Model")
+start = time.time()
+cr, preds, examples, results = cifar_model.test_defense_model(loss_function, pixle_attack, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test Pixle: {end-start}")
+
+print("-" * 50)
+
+print("Results for Distillation Defence on Cifar")
+cifar_distiller = Distiller(mnist_model, device, "Cifar", learning_rate, loss_function)
+print("Baseline Distilled MNIST")
+start = time.time()
+cr, preds, examples = cifar_distiller.test_distillation()
+end = time.time()
+print(cr)
+print(f"Average time to test baseline: {end-start}")
+
+print("IFGSM Attack results on Distilled Model")
+start = time.time()
+cr, preds, examples, results = cifar_distiller.test_attack_adversarials(ifgsm_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform IFGSM on Distilled Model: {np.mean(results["iterations"])}")
+print(f"Time to test IFGSM: {end-start}")
+
+print("Deepfool Attack results on Distilled Model")
+start = time.time()
+cr, preds, examples, results = cifar_distiller.test_attack_adversarials(deepfool_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Deepfool on Distilled Model: {np.mean(results["iterations"])}")
+print(f"Time to test Deepfool: {end-start}")
+
+print("CW Attack results on Distilled Model")
+start = time.time()
+cr, preds, examples, results = cifar_distiller.test_attack_adversarials(cw_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform CW on Distilled Model: {np.mean(results["iterations"])}")
+print(f"Time to test CW: {end-start}")
+
+print("Pixle Attack results on Distilled Model")
+start = time.time()
+cr, preds, examples, results = cifar_distiller.test_attack_adversarials(pixle_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Pixle on Distilled Model: {np.mean(results["iterations"])}")
+print(f"Time to test Pixle: {end-start}")
+
+print("-" * 50)
+print("-" * 50)
+print("-" * 50)
+
+print("Traffic Tests")
+
+device = torch.device("cpu")
+traffic_model = TrafficNeuralNetwork(device, train_split=0.8, batch_size=64).to(device)
+
+learning_rate = 1e-4
+loss_function = nn.NLLLoss()
+traffic_optimizer = optim.Adam(traffic_model.parameters(), learning_rate)
+
+traffic_model.load_model()
+
+print("Baseline well trained Traffic model")
+start = time.time()
+cr, preds, examples = traffic_model.test_model(loss_function)
+end = time.time()
+print(cr)
+print(f"Time to test baseline Traffic model: {end-start}")
+
+print("-" * 50)
+
+print("IFGSM Attack Results on Traffic")
+ifgsm_attack = IFGSM(traffic_model, device, targeted=False, loss_function=loss_function, optimizer=traffic_optimizer, eps=0.1, max_steps=20, decay=1, alpha=0.01)
+start = time.time()
+cr, preds, examples, results = traffic_model.test_attack_model(loss_function, ifgsm_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform IFGSM: {np.mean(results["iterations"])}")
+print(f"Time to test IFGSM: {end-start}")
+
+print("-" * 50)
+
+print("Deepfool Attack Results on Traffic")
+deepfool_attack = DeepFool(traffic_model, device, targeted=False, step=0.02, max_iter=1000, loss_function=loss_function, optimizer=traffic_optimizer)
+start = time.time()
+cr, preds, examples, results = traffic_model.test_attack_model(loss_function, deepfool_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Deepfool: {np.mean(results["iterations"])}")
+print(f"Time to test Deepfool: {end-start}")
+
+print("-" * 50)
+
+traffic_targets = []
+for _, target in traffic_model.test_data:
+    traffic_targets.append(target)
+
+traffic_targets = torch.tensor(traffic_targets)
+
+print("CW Attack Results on Traffic")
+cw_attack = CW(traffic_model, device, targeted=False, search_steps=5, max_steps=20, confidence=0, lr=learning_rate, loss_function=loss_function, optimizer=traffic_optimizer, targets=traffic_targets)
+start = time.time()
+cr, preds, examples, results = traffic_model.test_attack_model(loss_function, cw_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform CW: {np.mean(results["iterations"])}")
+print(f"Time to test CW: {end-start}")
+
+print("-" * 50)
+
+print("Pixle Attack Results on Traffic")
+pixle_attack = Pixle(traffic_model, device, targeted=False, attack_type=0, loss_function=loss_function, optimizer=traffic_optimizer, max_steps=0, max_patches=0)
+start = time.time()
+cr, preds, examples, results = traffic_model.test_attack_model(loss_function, pixle_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Pixle: {np.mean(results["iterations"])}")
+print(f"Time to test Pixle: {end-start}")
+
+print("-" * 50)
+
+print("Adversarial Example Traffic model")
+adverserials = AdverserialExamples(model=None, device=device, ifgsm=ifgsm_attack, cw=cw_attack, deepfool=deepfool_attack, pixle=pixle_attack, dataset="Traffic", learning_rate=learning_rate, loss_function=loss_function)
+print("Baseline Traffic AE")
+start = time.time()
+cr, preds, examples = adverserials.test_adverserials(loss_function)
+end = time.time()
+print(cr)
+print(f"Time to test baseline AE Model: {end-start}")
+
+print("IFGSM Attack results on AE Model")
+start = time.time()
+cr, preds, examples, results = adverserials.test_attack_adversarials(loss_function, ifgsm_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform IFGSM on AE Model: {np.mean(results["iterations"])}")
+print(f"Time to test IFGSM: {end-start}")
+
+print("Deepfool Attack results on AE Model")
+start = time.time()
+cr, preds, examples, results = adverserials.test_attack_adversarials(loss_function, deepfool_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Deepfool on AE Model: {np.mean(results["iterations"])}")
+print(f"Time to test Deepfool: {end-start}")
+
+print("CW Attack results on AE Model")
+start = time.time()
+cr, preds, examples, results = adverserials.test_attack_adversarials(loss_function, cw_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform CW on AE Model: {np.mean(results["iterations"])}")
+print(f"Time to test CW: {end-start}")
+
+print("Pixle Attack results on AE Model")
+start = time.time()
+cr, preds, examples, results = adverserials.test_attack_adversarials(loss_function, pixle_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Pixle on AE Model: {np.mean(results["iterations"])}")
+print(f"Time to test Pixle: {end-start}")
+
+print("-" * 50)
+
+print("Results for Feature Squeezing defense on Traffic")
+fs_defense = FeatureSqueezing(traffic_model, device)
+print("Baseline FS MNIST")
+start = time.time()
+cr, preds, examples = traffic_model.test_baseline_defense_model(loss_function, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test baseline: {end-start}")
+
+print("IFGSM Attack results on FS Model")
+start = time.time()
+cr, preds, examples, results = traffic_model.test_defense_model(loss_function, ifgsm_attack, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test IFGSM: {end-start}")
+
+print("Deepfool Attack results on FS Model")
+start = time.time()
+cr, preds, examples, results = traffic_model.test_defense_model(loss_function, deepfool_attack, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test Deepfool: {end-start}")
+
+print("CW Attack results on FS Model")
+start = time.time()
+cr, preds, examples, results = traffic_model.test_defense_model(loss_function, cw_attack, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test CW: {end-start}")
+
+print("Pixle Attack results on FS Model")
+start = time.time()
+cr, preds, examples, results = traffic_model.test_defense_model(loss_function, pixle_attack, fs_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test Pixle: {end-start}")
+
+print("-" * 50)
+
+print("Results for Gradient Masking defense on MNIST")
+gm_defense = GradientMasking(traffic_model, device, loss_function, 0.2)
+print("Baseline GM MNIST")
+start = time.time()
+cr, preds, examples = traffic_model.test_baseline_defense_model(loss_function, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test baseline: {end-start}")
+
+print("IFGSM Attack results on GM Model")
+start = time.time()
+cr, preds, examples, results = traffic_model.test_defense_model(loss_function, ifgsm_attack, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test IFGSM: {end-start}")
+
+print("Deepfool Attack results on GM Model")
+start = time.time()
+cr, preds, examples, results = traffic_model.test_defense_model(loss_function, deepfool_attack, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test Deepfool: {end-start}")
+
+print("CW Attack results on GM Model")
+start = time.time()
+cr, preds, examples, results = traffic_model.test_defense_model(loss_function, cw_attack, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test CW: {end-start}")
+
+print("Pixle Attack results on GM Model")
+start = time.time()
+cr, preds, examples, results = traffic_model.test_defense_model(loss_function, pixle_attack, gm_defense)
+end = time.time()
+print(cr)
+print(f"Average time to test Pixle: {end-start}")
+
+print("-" * 50)
+
+print("Results for Distillation Defence on Traffic")
+traffic_distiller = Distiller(mnist_model, device, "Traffic", learning_rate, loss_function)
+print("Baseline Distilled Traffic")
+start = time.time()
+cr, preds, examples = traffic_distiller.test_distillation()
+end = time.time()
+print(cr)
+print(f"Average time to test baseline: {end-start}")
+
+print("IFGSM Attack results on Distilled Model")
+start = time.time()
+cr, preds, examples, results = traffic_distiller.test_attack_adversarials(ifgsm_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform IFGSM on Distilled Model: {np.mean(results["iterations"])}")
+print(f"Time to test IFGSM: {end-start}")
+
+print("Deepfool Attack results on Distilled Model")
+start = time.time()
+cr, preds, examples, results = traffic_distiller.test_attack_adversarials(deepfool_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Deepfool on Distilled Model: {np.mean(results["iterations"])}")
+print(f"Time to test Deepfool: {end-start}")
+
+print("CW Attack results on Distilled Model")
+start = time.time()
+cr, preds, examples, results = traffic_distiller.test_attack_adversarials(cw_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform CW on Distilled Model: {np.mean(results["iterations"])}")
+print(f"Time to test CW: {end-start}")
+
+print("Pixle Attack results on Distilled Model")
+start = time.time()
+cr, preds, examples, results = traffic_distiller.test_attack_adversarials(pixle_attack)
+end = time.time()
+print(cr)
+print(f"Average iterations to perform Pixle on Distilled Model: {np.mean(results["iterations"])}")
+print(f"Time to test Pixle: {end-start}")
+
+print("\n")
+print("Done! :)")
