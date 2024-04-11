@@ -41,19 +41,19 @@ class AdverserialExamples(BaseDefense):
         self.loss_function = loss_function
 
     def forward_batch(self, inputs, labels):
-        r = random.randint(0, 1)
+        r = random.randint(0, 3)
 
-        #if r == 0:
-        attack_results = self.ifgsm.forward(inputs, labels)
+        if r == 0:
+            attack_results = self.ifgsm.forward(inputs, labels)
 
-        #elif r == 1:
-        #    attack_results = self.deepfool.forward(inputs, labels)
+        elif r == 1:
+           attack_results = self.deepfool.forward(inputs, labels)
 
-        # elif r == 2:
-        #     attack_results = self.cw.forward(inputs, labels)
+        elif r == 2:
+            attack_results = self.cw.forward(inputs, labels)
 
-        # else:
-        #     attack_results = self.pixle.forward(inputs, labels)
+        else:
+            attack_results = self.pixle.forward(inputs, labels)
 
         return attack_results[0]
     

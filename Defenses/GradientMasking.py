@@ -14,13 +14,13 @@ class GradientMasking(BaseDefense):
         self.epsilon = epsilon
 
     def forward_individual(self, input, label):
-        input.requires_grad_(True)
-        input = input.unsqueeze(0)
+        input = input[None, :].requires_grad_(True)
         label = label.unsqueeze(0)
-        outputs = self.model(input)
+        output = self.model(input)
 
-        loss = self.loss_function(outputs, label)
-        loss.backward()
+        loss = self.loss_function(output, label)
+        self.model.zero_grad()
+        loss.backward(retain_graph=True)
 
         # Add random noise to the gradients
         input_grad = input.grad.detach()

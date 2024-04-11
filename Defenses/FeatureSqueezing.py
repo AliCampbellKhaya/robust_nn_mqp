@@ -17,6 +17,7 @@ class FeatureSqueezing(BaseDefense):
         super(FeatureSqueezing, self).__init__("FS", model, device)
 
     def forward_individual(self, input, label):
+      input = input[None, :]
       input = gaussian_filter(input.detach(), sigma=0.5)
       #inputs = gaussian_filter(inputs.detach().numpy(), sigma=0.5)
       return torch.tensor(input)

@@ -192,6 +192,8 @@ class BaseNeuralNetwork(nn.Module):
         preds_true = []
         examples = []
 
+        pred_probs = 0
+
         for (inputs, labels) in self.test_dataloader:
             (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
 
@@ -210,12 +212,16 @@ class BaseNeuralNetwork(nn.Module):
             else:
                 break
 
+            pred_probs = pred[0].detach().cpu().numpy()
+
+            break
+
         # TODO: Fix classification
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds), zero_division=0.0) # target_names =
 
         # Preds are the array of probability percentage
-        return cr, preds, examples
+        return cr, pred_probs, examples
     
     def test_attack_model(self, loss_function, attack):
         self.eval()
@@ -234,6 +240,8 @@ class BaseNeuralNetwork(nn.Module):
             "perturbations": [],
             "original_image": []
         }
+
+        pred_probs = 0
 
         for (inputs, labels) in self.test_dataloader:
             (inputs, labels) = (inputs.to(self.device), labels.to(self.device))
@@ -270,12 +278,17 @@ class BaseNeuralNetwork(nn.Module):
             else:
                 break
 
+            pred_probs = attack_pred[0].detach().cpu().numpy()
+
+
+            break
+
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds), zero_division=0.0) # target_names =
         #cr = classification_report(results["final_label"], results["attack_label"])
 
         # Preds are the array of probability percentage
-        return cr, preds, examples, results
+        return cr, pred_probs, examples, results
     
     def test_defense_model(self, loss_function, attack, defense):
         self.eval()
@@ -301,6 +314,9 @@ class BaseNeuralNetwork(nn.Module):
 
             self.zero_grad()
             init_loss.backward()
+
+            #input_attack = defense.forward(inputs, labels)
+            #input_defense = attack.forward(input_attack[0], labels)
 
             input_attack = attack.forward(inputs, labels)
             input_defense = defense.forward(input_attack[0], labels)

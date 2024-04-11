@@ -27,8 +27,9 @@ class BaseDefense():
             defended_images.append(defended_image)
             pert_image_batch.append(defended_image)
 
-        results2 = [torch.stack(pert_image_batch), defended_images]
-        
+        #results2 = [torch.stack(pert_image_batch), defended_images]
+        results2 = [torch.stack(pert_image_batch).flatten(start_dim=1, end_dim=2), defended_images]
+
         return results2
 
     def forward_individual(self, input, label=None):
