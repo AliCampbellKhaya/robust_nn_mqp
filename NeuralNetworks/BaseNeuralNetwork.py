@@ -127,8 +127,8 @@ class BaseNeuralNetwork(nn.Module):
         self.history["val_loss"].append(avg_val_loss.cpu().detach().numpy())
         self.history["val_acc"].append(val_correct)
 
-        if avg_val_loss.cpu().detach().numpy() <= min(self.history["val_loss"]):
-            self.save_model()
+        # if avg_val_loss.cpu().detach().numpy() <= min(self.history["val_loss"]):
+        #     self.save_model()
 
         return self.history
     
@@ -275,8 +275,8 @@ class BaseNeuralNetwork(nn.Module):
             #for i in range(5):
                 #examples.append( (results["original_image"][i], results["final_label"][i], results["pert_image"][i].squeeze().detach().cpu()) )
                 examples.append( (init_pred, attack_pred, input_attack_results[0].squeeze().detach().cpu()) )
-            else:
-                break
+            #else:
+                #break
 
             pred_probs = attack_pred[0].detach().cpu().numpy()
 
@@ -341,6 +341,8 @@ class BaseNeuralNetwork(nn.Module):
 
             else:
                 break
+
+            #break
 
         #cr1 = classification_report(self.test_data.targets, np.array(preds), target_names=self.test_data.classes)
         cr = classification_report(np.array(preds_true), np.array(preds), zero_division=0.0) # target_names =

@@ -24,14 +24,15 @@ class GradientMasking(BaseDefense):
 
         # Add random noise to the gradients
         input_grad = input.grad.detach()
-        noise = torch.randn_like(input) * self.epsilon
+        noise = torch.randn_like(input_grad) * self.epsilon
         input_grad_masked = input_grad + noise
+        #input_grad_masked = noise
 
-        # Zero out the gradients to prevent them from being used during optimization
         input.grad.zero_()
 
         # Update the input with the masked gradients
-        masked_input = input.detach() + input_grad_masked
+        masked_input = input.clone().detach()
+        masked_input.grad = input_grad_masked
         masked_input.requires_grad_(True)
 
         #return torch.from_numpy(masked_input).float()

@@ -62,7 +62,6 @@ class Pixle(BaseAttack):
 
         attackedImage = torch.stack((attackedImageR.view(32,32), attackedImageG.view(32,32), attackedImageB.view(32,32))).unsqueeze(0)
         attacked_label = self.model(attackedImage).argmax(dim=1)[0].item()
-        attackedImage
         return attackedImage, origLabel, attacked_label, counterTwo, attackedImage
     
     def forward_random_rows(self, input, label, start_row, end_row):

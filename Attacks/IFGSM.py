@@ -2,6 +2,10 @@ import torch
 import numpy as np
 from Attacks.BaseAttack import BaseAttack
 
+import matplotlib.pyplot as plt
+from matplotlib.colors import NoNorm
+
+
 """
 TODO: Write comment explaining attack
 """
@@ -59,5 +63,13 @@ class IFGSM(BaseAttack):
             attack_label = attack_pred.detach().argmax(dim=1)
 
             steps += 1
+
+            # plt.figure(figsize=(8,10))
+            # plt.xticks([], [])
+            # plt.yticks([], [])
+            # #plt.imshow(img[0,:,:], cmap="gray")
+            # plt.imshow(x[0,0,:,:].detach(), cmap="gray", norm=NoNorm())
+            # plt.tight_layout()
+            # plt.show()
 
         return x, label.cpu().numpy().item(), attack_label.cpu().numpy().item(), steps, total_pert
