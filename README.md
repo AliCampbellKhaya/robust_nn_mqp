@@ -3,7 +3,7 @@ Repository for work on Robust Neural Networks MQP to satisfy the senior thesis g
 Authors: Alasdair Campbell and Jared Lasselle
 Paper: [https://digital.wpi.edu/show/2v23vz553](https://digital.wpi.edu/show/2v23vz553)
 
-Abstract:
+### Abstract
 Deep neural networks have demonstrated remarkable accuracy for most image classification machine learning tasks.  However, these networks remain susceptible to adversarial attacks, where slight perturbations in input data produces a misclassification.  Without effective defense, this vulnerability  creates  a  significant  obstacle  to  the  practical  applications  of neural networks.  Therefore, in this paper we propose four unique interpretations of adversarial attacks designed to test the limits of adversarial defenses.  To conclude the paper we assess the strengths and weaknesses of the four defenses we designed and recommend an approach to ensure the safety and security of neural networks in the public domain.
 
 We will cover highlights from the research project in this README document, hower, for a full and complete understanding of our work we encourage you to read the full paper.
