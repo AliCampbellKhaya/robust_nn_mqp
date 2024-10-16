@@ -1,6 +1,10 @@
 import torch
 
 class BaseAttack():
+    """
+    Base Attack super class
+    """
+    
     def __init__(self, name, model, device, targeted, loss_function, optimizer):
         self.attack = name
         self.model = model
@@ -34,10 +38,9 @@ class BaseAttack():
             "perturbations": [],
             "original_image": []
         }
+
         pert_image_batch = []
         for image, label in zip(input, labels):
-            # print("x before attack")
-            # print(image)
             original_image = image.detach().clone()
             pert_image, final_label, attack_label, iterations, pert = self.forward_individual(image, label)
             results["pert_image"].append(pert_image)

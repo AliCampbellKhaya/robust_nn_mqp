@@ -47,8 +47,6 @@ class CW(BaseAttack):
             previous_loss = 1e10
             previous_loss_abort = np.inf
 
-            #step_const = torch.tensor(x, const)
-
             for inner_step in range(self.max_steps):
                 loss, x_pert, x_pert_logits, model_grads = self.optimize(x_tanh, x_from_tanh, delta, const, rows, attack_optimizer)
                 delta -= model_grads
@@ -108,7 +106,6 @@ class CW(BaseAttack):
 
         logits = self.model.forward_omit_softmax(x)
         one_hot_like = torch.eye(logits.size(dim=1))
-        #one_hot_like[self.model.test_data.targets] = 1e10
         one_hot_like[self.targets] = 1e10
         other_logits = torch.argmax((logits - one_hot_like), axis=-1)
 
