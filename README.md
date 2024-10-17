@@ -1,6 +1,6 @@
 # Enhancing the Robustness of Deep Neural Networks
-Repository for work on Robust Neural Networks MQP to satisfy the senior thesis graduation requirement at Worcester Polytechnic Institute \
-Authors: Alasdair Campbell and Jared Lasselle
+Repository for work on Robust Neural Networks MQP completed to satisfy the senior thesis graduation requirement at Worcester Polytechnic Institute \
+Authors: Alasdair Campbell and Jared Lasselle \
 Paper: [https://digital.wpi.edu/show/2v23vz553](https://digital.wpi.edu/show/2v23vz553)
 
 ### Abstract
@@ -20,8 +20,8 @@ The NeuralNetworks folder contains the neural network architecture for 3 main da
 * [GTSRB](#GTSRB-Dataset)
 * [CIFAR10](#CIFAR10-Dataset)
 
-TODO: Describe Philosophy of Neural Network Design \
-TODO: Describe any drawbacks of design
+Our neural network consists of 2 convolutional layers each containing a convolution and pooling layer, followed by 3 dense layers used to constrain outputs to the desired number of classes. Pictured below is an example of the implemented CNN structure for the MNIST Dataset.
+![Screenshot](Convolutional_Neural_Network.png)
 
 ### MNIST Dataset
 TODO: Describe Neural Network Training and Testing \
