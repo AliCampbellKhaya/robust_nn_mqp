@@ -18,7 +18,7 @@ To achieve the purpose of this research there are three main sections:
 Our neural network consists of 2 convolutional layers each containing a convolution and pooling layer, followed by 3 dense layers used to constrain outputs to the desired number of classes. Pictured below is an example of the implemented CNN structure for the MNIST Dataset.
 ![Screenshot](Convolutional_Neural_Network.png)
 
-We implemented our neural network architecture on 3 different datasets, with picture examples used in the training and testing process from each dataset included below. All images were preprocessed via normalization and resizing to a 3x32x32 tensor to increase compatability with our neural network structure.
+We implemented our neural network architecture on 3 different datasets, with picture examples used in the training and testing process from each dataset included below. All images were preprocessed via normalization and resizing to a 3x32x32 tensor to increase compatability with our neural network structure. \
 ![Screenshot](MNIST_Classes_Crop.png) ![Screenshot](CIFAR_Classes_Crop.png) ![Screenshot](Traffic_Classes_Crop.png)
 
 ## Adverserial Attacks
