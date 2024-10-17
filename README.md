@@ -55,8 +55,9 @@ For each attack we provide an example of the attack being performed on an image 
 All code for the FGSM and IFGSM attacks are contained in the files [FGSM](Attacks/FGSM.py) | [IFGSM](Attacks/IFGSM.py) \
 
 Example Image and Confidences: \
-![Screenshot](fgsm_7.png) ![Screenshot](ifgsm_7_confidences.png) \
+![Screenshot](fgsm_7.png) ![Screenshot](ifgsm_7_confidences.png) 
 
+TODO: Decide on Tables
 | | MNIST | CIFAR | GTSRB |
 | F1 Score | 0.01 | 0.13 | 0.02 |
 
