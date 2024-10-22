@@ -19,9 +19,12 @@ Our neural network consists of 2 convolutional layers each containing a convolut
 ![Screenshot](Convolutional_Neural_Network.png)
 
 We implemented our neural network architecture on 3 different datasets (MNIST, CIFAR, GTSRB), with picture examples used in the training and testing process from each dataset included below. All images were preprocessed via normalization and resizing to a 3x32x32 tensor to increase compatability with our neural network structure. \
+
 ![Screenshot](MNIST_Classes_Crop.png) ![Screenshot](CIFAR_Classes_Crop.png) ![Screenshot](Traffic_Classes_Crop.png)
 
-TODO: Links to each dataset
+[MNIST Database](https://yann.lecun.com/exdb/mnist/)
+[CIFAR-10 Database](https://www.cs.toronto.edu/~kriz/cifar.html)
+[GTSRB Database](https://benchmark.ini.rub.de/)
 
 ### Initial Results and Accuracies
 Training Loss for MNIST: \
@@ -52,7 +55,7 @@ We additionally designed a JSMA attack that ultimately we did not have time to p
 For each attack we provide an example of the attack being performed on an image (in this case, the digit "7" from MNIST) and the corresponding confidences produced by the attack and the F1 Score for the testing set for each dataset.
 
 ### Fast Gradient Sign Method (FGSM) and Iterative Fast Gradient Sign Method (IFGSM)
-All code for the FGSM and IFGSM attacks are contained in the files [FGSM](Attacks/FGSM.py) | [IFGSM](Attacks/IFGSM.py) \
+All code for the FGSM and IFGSM attacks are contained in the files [FGSM](Attacks/FGSM.py) | [IFGSM](Attacks/IFGSM.py) \n
 
 Example Image and Confidences: \
 ![Screenshot](fgsm_7.png) ![Screenshot](ifgsm_7_confidences.png) 
