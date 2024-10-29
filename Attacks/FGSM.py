@@ -1,12 +1,17 @@
 import torch
 from Attacks.BaseAttack import BaseAttack
 
-"""
-TODO: Write comment explaining attack
-TODO: Look into why results changed when refactored into class
-"""
-
 class FGSM(BaseAttack):
+    """
+    Our unique interpretation of a FGSM attack
+    Based on the paper: Explaining and Harnessing Adversarial Examples
+    https://arxiv.org/pdf/1412.6572
+
+    Arguments:
+        model, device, targeted, loss_function and optimizer are identical in use to the super class BaseAttack
+        eps (float):
+    """
+
     def __init__(self, model, device, targeted, loss_function, optimizer, eps):
         super(FGSM, self).__init__("FGSM", model, device, targeted, loss_function, optimizer)
         self.eps = eps

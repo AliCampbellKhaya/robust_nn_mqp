@@ -1,17 +1,25 @@
 import torch
-import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
+
 from Attacks.BaseAttack import BaseAttack
 
-import matplotlib.pyplot as plt
-
-"""
-TODO: Write comment explaining attack
-1e10 used in place of infinity
-"""
-
 class CW(BaseAttack):
+    """
+    Our unique interpretation of a CW attack
+    Based on the paper: Towards Evaluating the Robustness of Neural Networks
+    https://arxiv.org/pdf/1608.04644
+    We implemented an L2 optimized version of the CW attack
+
+    Arguments:
+        model, device, targeted, loss_function and optimizer are identical in use to the super class BaseAttack
+        search_steps (int): max number of binary searches for optimal value c
+        max_steps (int): max number of iterations to perform gradient descent for each constant c
+        confidence (int): the minimum amount of difference allowed between the 2 images
+        lr (int): learning rate of the attack
+        targets (torch.tensor): original tensor of targets/confidences for each image
+    """
+
     def __init__(self, model, device, targeted, search_steps, max_steps, confidence, lr, loss_function, optimizer, targets):
         super(CW, self).__init__("CW", model, device, targeted, loss_function, optimizer)
         self.search_steps = search_steps
@@ -25,6 +33,7 @@ class CW(BaseAttack):
         label = label.unsqueeze(0)
 
         lower_bound_const = torch.zeros(1)
+        # 1e10 used instead of infinity for ease of computation
         upper_bound_const = torch.ones(1) * 1e10
         const = torch.ones(1) * 1e-3
 
@@ -57,7 +66,6 @@ class CW(BaseAttack):
                         break
                     previous_loss_abort = loss
 
-                # change class logits maybe
                 current_adv_iter = x_pert
 
                 current_adv = torch.tensor(torch.abs(previous_loss - loss) > 0.5)

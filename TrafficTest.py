@@ -5,7 +5,7 @@ import numpy as np
 import time
 
 from NeuralNetworks.TrafficNeuralNetwork import TrafficNeuralNetwork
-from Attacks.Pixle import Pixle
+from Attacks.PixelSwap import Pixle
 from Attacks.CW import CW
 from Attacks.IFGSM import IFGSM
 from Attacks.DeepFool import DeepFool

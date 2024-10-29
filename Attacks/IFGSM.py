@@ -1,16 +1,21 @@
 import torch
-import numpy as np
+
 from Attacks.BaseAttack import BaseAttack
 
-import matplotlib.pyplot as plt
-from matplotlib.colors import NoNorm
-
-
-"""
-TODO: Write comment explaining attack
-"""
-
 class IFGSM(BaseAttack):
+    """
+    Our unique interpretation of an IFGSM attack
+    Based on the paper: Boosting Adversarial Attacks with Momentum
+    https://arxiv.org/pdf/1710.06081
+
+    Arguments:
+        model, device, targeted, loss_function and optimizer are identical in use to the super class BaseAttack
+        eps (float):
+        max_steps (int):
+        decay (int):
+        alpha (float):
+    """
+
     def __init__(self, model, device, targeted, loss_function, optimizer, eps, max_steps, decay, alpha):
         super(IFGSM, self).__init__("IFGSM", model, device, targeted, loss_function, optimizer)
         self.eps = eps

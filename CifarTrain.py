@@ -10,7 +10,7 @@ from Defenses.Distiller import Distiller
 from Attacks.CW import CW
 from Attacks.DeepFool import DeepFool
 from Attacks.IFGSM import IFGSM
-from Attacks.Pixle import Pixle
+from Attacks.PixelSwap import Pixle
 
 from sklearn.metrics import classification_report
 

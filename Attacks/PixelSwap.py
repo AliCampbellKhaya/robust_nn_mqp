@@ -1,14 +1,24 @@
 import torch
-import numpy as np
 
 from Attacks.BaseAttack import BaseAttack
 
-"""
-TODO: Write comment explaining attack
-TODO: Move Pixle into here
-"""
+class PixelSwap(BaseAttack):
+    """
+    Our unique interpretation of a Pixel Swap attack
+    Based on the paper: One Pixel Attack for Fooling Deep Neural Networks
+    https://arxiv.org/pdf/1710.08864
+    And the paper: Pixle: a fast and effective black-box attack based on rearranging pixels
+    https://ieeexplore.ieee.org/document/9892966
 
-class Pixle(BaseAttack):
+    Arguments:
+        model, device, targeted, loss_function and optimizer are identical in use to the super class BaseAttack
+        attack_type (int): either 0, 1 or 2
+            0 to swap the most similar pixels
+            1 to randomly swap rows of pixels
+            2 to completely randomly swap pixels
+        max_steps (int):
+        max_patches (int):
+    """
     def __init__(self, model, device, targeted, attack_type, max_steps, max_patches, loss_function, optimizer):
         super().__init__("Pixle", model, device, targeted, loss_function, optimizer)
         self.attack_type = attack_type

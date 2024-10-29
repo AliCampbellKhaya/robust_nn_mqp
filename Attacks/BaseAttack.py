@@ -2,7 +2,15 @@ import torch
 
 class BaseAttack():
     """
-    Base Attack super class
+    Base Attack super class used for calling all attacks
+
+    Arguments:
+        name (str): name and type of the attack
+        model (torch.nn.Module): neural network to be used in attack
+        device (torch.device): either "cpu" or "cuda", the type of processor to be used in the attack
+        targeted (bool): True if targeted to a value, False if not
+        loss_function (torch.nn._Loss): loss function to be used to calculate success of attack
+        optimizer (torch.nn.Optimizer): optimizer used to minimze the loss
     """
     
     def __init__(self, name, model, device, targeted, loss_function, optimizer):
@@ -14,22 +22,37 @@ class BaseAttack():
         self.optimizer = optimizer
 
     def forward(self, input, labels=None):
+        """
+        Defines the forward pass for the attack
+        """
         input = input.clone().detach().to(self.device)
         labels = labels.clone().detach().to(self.device)
         results = self.batch_unloader(input, labels)
         return results
 
     def normalize(self, input, mean=[0.1307], std=[0.3081]):
+        """
+        Defines the normalization for each batch of images
+        """
         mean = torch.tensor(mean).to(self.device).reshape(1, self.model.num_channels, 1, 1)
         std = torch.tensor(std).to(self.device).reshape(1, self.model.num_channels, 1, 1)
         return (input - mean) / std
     
     def denormalize(self, input, mean=0.1307, std=0.3081):
+        """
+        Defines the denomalization for each batch of images
+        """
         mean = torch.tensor(mean).to(self.device).reshape(1, self.model.num_channels, 1, 1)
         std = torch.tensor(std).to(self.device).reshape(1, self.model.num_channels, 1, 1)
         return (input * std) + mean
     
     def batch_unloader(self, input, labels):
+        """
+        Unloads images from the batch for use in an attack as some attacks ran
+        quicker and more succesfully when unloaded
+        """
+
+        # Dictionary for tracking individual results from the attack
         results = {
             "pert_image": [],
             "final_label": [],
@@ -39,6 +62,7 @@ class BaseAttack():
             "original_image": []
         }
 
+        # Run the forward pass for each image
         pert_image_batch = []
         for image, label in zip(input, labels):
             original_image = image.detach().clone()
@@ -56,7 +80,10 @@ class BaseAttack():
         return results2
 
     def forward_individual(self, input, label):
-        """Should be overwritten by every subclass"""
+        """
+        Defines the computation used in the forward pass
+        Should be overwritten by every subclass
+        """
         raise NotImplementedError
 
     def __call__(self, inputs, labels=None):

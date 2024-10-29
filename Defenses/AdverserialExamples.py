@@ -7,7 +7,7 @@ from Attacks.FGSM import FGSM
 from Attacks.CW import CW
 from Attacks.DeepFool import DeepFool
 from Attacks.IFGSM import IFGSM
-from Attacks.Pixle import Pixle
+from Attacks.PixelSwap import Pixle
 
 from NeuralNetworks.MNISTNeuralNetwork import MNISTNeuralNetwork
 from NeuralNetworks.CifarNeuralNetwork import CifarNeuralNetwork

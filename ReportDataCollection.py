@@ -14,7 +14,7 @@ from NeuralNetworks.TrafficNeuralNetwork import TrafficNeuralNetwork
 from Attacks.IFGSM import IFGSM
 from Attacks.DeepFool import DeepFool
 from Attacks.CW import CW
-from Attacks.Pixle import Pixle
+from Attacks.PixelSwap import Pixle
 
 from Defenses.AdverserialExamples import AdverserialExamples
 from Defenses.FeatureSqueezing import FeatureSqueezing

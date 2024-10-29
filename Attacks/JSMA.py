@@ -1,15 +1,19 @@
 import torch
-import torch.nn.functional as F
-from torch.autograd import Variable
 
 from Attacks.BaseAttack import BaseAttack
 
-"""
-TODO: Write comment explaining attack
-TODO: Write attack
-"""
-
 class JSMA(BaseAttack):
+    """
+    Our unique interpretation of a JSMA attack
+    Based on the paper: Maximal Jacobian-based Saliency Map Attack
+    https://arxiv.org/pdf/1808.07945
+
+    Arguments:
+        model, device, targeted, loss_function and optimizer are identical in use to the super class BaseAttack
+        max_perturb ():
+        perturb_length ():
+        max_steps (int):
+    """
     def __init__(self, model, device, targeted, max_perturb, perturb_length, max_steps, loss_function, optimizer):
         super(JSMA, self).__init__("JSMA", model, device, targeted, loss_function, optimizer)
         self.max_perturb = max_perturb

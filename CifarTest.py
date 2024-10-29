@@ -8,7 +8,7 @@ from Attacks.FGSM import FGSM
 from Attacks.CW import CW
 from Attacks.IFGSM import IFGSM
 from Attacks.DeepFool import DeepFool
-from Attacks.Pixle import Pixle
+from Attacks.PixelSwap import Pixle
 
 from Defenses.FeatureSqueezing import FeatureSqueezing
 from Defenses.GradientMasking import GradientMasking

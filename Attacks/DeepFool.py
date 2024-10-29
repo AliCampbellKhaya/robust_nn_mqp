@@ -3,11 +3,18 @@ import numpy as np
 
 from Attacks.BaseAttack import BaseAttack
 
-"""
-TODO: Write comment explaining attack
-"""
-
 class DeepFool(BaseAttack):
+    """
+    Our unique interpretation of a Deepfool attack
+    Based on the paper: Deepfool: a simple and accurate method to fool deep neural networks
+    https://arxiv.org/pdf/1511.04599
+
+    Arguments:
+        model, device, targeted, loss_function and optimizer are identical in use to the super class BaseAttack
+        step (float):
+        max_iter (int):
+    """
+
     def __init__(self, model, device, targeted, step, max_iter, loss_function, optimizer):
         super().__init__("DeepFool", model, device, targeted, loss_function, optimizer)
         self.step = step
